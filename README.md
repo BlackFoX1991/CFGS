@@ -37,8 +37,6 @@ while (true) {
 }
 ```
 
-> ✅ Note the use of curly braces `{}` for all statements and semicolons `;` after each statement except at the end of a block.
-
 ---
 
 ## Roadmap
