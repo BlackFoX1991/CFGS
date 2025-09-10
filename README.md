@@ -23,7 +23,7 @@
 
 ```cfgs
 # Example ConfigScript code
-function greet(name) {
+func greet(name) {
     if (name == "Alice") {
         print("Hello Alice!");
     } else {
