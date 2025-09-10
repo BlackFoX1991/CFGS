@@ -17,7 +17,13 @@ public class Lexer(string text)
         { "struct", TokenType.Struct },
         { "new", TokenType.New },
         {"break", TokenType.Break },
-        {"continue",TokenType.Continue }
+        {"continue",TokenType.Continue },
+        {"try", TokenType.Try },
+        {"catch", TokenType.Catch },
+        {"finally", TokenType.Finally },
+        {"throw", TokenType.Throw },
+        {"match", TokenType.Match },
+        {"case", TokenType.Case }
     };
 
     private void Advance() {

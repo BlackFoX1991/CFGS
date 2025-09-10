@@ -48,5 +48,12 @@ public enum TokenType
     BitOr,
     BitXor,
     Break,
-    Continue
+    Continue,
+    Try,
+    Catch,
+    Finally,
+    Throw,
+    Match,
+    Case,
+    Default
 }

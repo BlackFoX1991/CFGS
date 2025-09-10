@@ -163,6 +163,47 @@ public class ReturnNode(Node value, int column, int line) : Node
     public override int Line { get; set; } = line;
 }
 
+public class TryNode(Node tryBlock, Node? catchVar, Node? catchBlock, Node? finallyBlock, int column, int line) : Node
+{
+    public readonly Node TryBlock = tryBlock;
+    public readonly Node? CatchVar = catchVar; // optionaler Variablenname
+    public readonly Node? CatchBlock = catchBlock;
+    public readonly Node? FinallyBlock = finallyBlock;
+
+    public override int Column { get; set; } = column;
+    public override int Line { get; set; } = line;
+}
+
+public class ThrowNode(Node value, int column, int line) : Node
+{
+    public readonly Node Value = value;
+
+    public override int Column { get; set; } = column;
+    public override int Line { get; set; } = line;
+}
+
+public class MatchCaseNode(List<Node> values, Node body, int column, int line) : Node
+{
+    public readonly List<Node> Values = values; // case Werte
+    public readonly Node Body = body;
+
+    public override int Column { get; set; } = column;
+    public override int Line { get; set; } = line;
+}
+
+public class MatchNode(Node value, List<MatchCaseNode> cases, Node? defaultCase, int column, int line) : Node
+{
+    public readonly Node Value = value; // Wert, der verglichen wird
+    public readonly List<MatchCaseNode> Cases = cases;
+    public readonly Node? DefaultCase = defaultCase;
+
+    public override int Column { get; set; } = column;
+    public override int Line { get; set; } = line;
+}
+
+
+
+
 public class StructDefNode(string name, List<string> fields, int column, int line) : Node
 {
     public string Name { get; } = name;

@@ -97,6 +97,56 @@ public class Interpreter
 
                 break;
             }
+            case TryNode t:
+                try
+                {
+                    Visit(t.TryBlock);
+                }
+                catch (Exception ex)
+                {
+                    if (t.CatchBlock != null)
+                    {
+                        if (t.CatchVar is VarNode vn)
+                            SetVariable(vn.Name, ex); // Fehler in Variable speichern
+
+                        Visit(t.CatchBlock);
+                    }
+                    else
+                    {
+                        throw; // kein Catch-Block → weiterwerfen
+                    }
+                }
+                finally
+                {
+                    if (t.FinallyBlock != null)
+                        Visit(t.FinallyBlock);
+                }
+                break;
+            case ThrowNode thr:
+                var tval = Eval(thr.Value);
+                throw new Exception(Convert.ToString(tval)); // wirft den Fehler an den Catch-Block weiter
+            case MatchNode m:
+                var matchVal = Eval(m.Value);
+                bool matched = false;
+
+                foreach (var c in m.Cases)
+                {
+                    foreach (var v in c.Values)
+                    {
+                        if (Eval(v).Equals(matchVal))
+                        {
+                            Visit(c.Body);
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (matched) break;
+                }
+
+                if (!matched && m.DefaultCase != null)
+                    Visit(m.DefaultCase);
+
+                break;
 
             case IfNode i:
                 if (Convert.ToBoolean(Eval(i.Condition)))

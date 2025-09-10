@@ -77,6 +77,99 @@ public class Parser(List<Token> tokens)
             Eat(TokenType.Semicolon);
             return new ReturnNode(val, Current.Column, Current.Line);
         }
+        else if(Current.Type == TokenType.Try)
+        {
+            Eat(TokenType.Try);
+
+            Eat(TokenType.LBrace);
+            Node? tryBlock = Block();
+            Eat(TokenType.RBrace);
+
+            Node? catchVar = null;
+            Node? catchBlock = null;
+            Node? finallyBlock = null;
+
+            if (Current.Type == TokenType.Catch)
+            {
+                Eat(TokenType.Catch);
+                Eat(TokenType.LParen);
+                catchVar = new VarNode(Current.Value, Current.Column, Current.Line);
+                Eat(TokenType.Identifier);
+                Eat(TokenType.RParen);
+
+                Eat(TokenType.LBrace);
+                catchBlock = Block();
+                Eat(TokenType.RBrace);
+            }
+
+            if (Current.Type == TokenType.Finally)
+            {
+                Eat(TokenType.Finally);
+                Eat(TokenType.LBrace);
+                finallyBlock = Block();
+                Eat(TokenType.RBrace);
+            }
+
+            return new TryNode(tryBlock, catchVar, catchBlock, finallyBlock, Current.Column, Current.Line);
+        }
+        else if (Current.Type == TokenType.Throw)
+        {
+            Eat(TokenType.Throw);
+            var val = Expr(); // Ausdruck nach throw
+            Eat(TokenType.Semicolon);
+            return new ThrowNode(val, Current.Column, Current.Line);
+        }
+        else if(Current.Type == TokenType.Match)
+        {
+            Eat(TokenType.Match); // match
+            Eat(TokenType.LParen);
+            var matchValue = Expr(); // Wert, der verglichen wird
+            Eat(TokenType.RParen);
+            Eat(TokenType.LBrace); // { für match
+
+            var cases = new List<MatchCaseNode>();
+            Node? defaultCase = null;
+
+            while (Current.Type != TokenType.RBrace)
+            {
+                if (Current.Type == TokenType.Case)
+                {
+                    Eat(TokenType.Case);
+
+                    // Case-Werte, eventuell mehrere durch Komma
+                    var caseValues = new List<Node>();
+                    caseValues.Add(Expr());
+
+                    while (Current.Type == TokenType.Comma)
+                    {
+                        Eat(TokenType.Comma);
+                        caseValues.Add(Expr());
+                    }
+
+                    // Block hinter case
+                    Eat(TokenType.LBrace);
+                    var body = Block();
+                    Eat(TokenType.RBrace);
+
+                    cases.Add(new MatchCaseNode(caseValues, body, Current.Column, Current.Line));
+                }
+                else if (Current.Type == TokenType.Default)
+                {
+                    Eat(TokenType.Default);
+                    Eat(TokenType.LBrace);
+                    defaultCase = Block();
+                    Eat(TokenType.RBrace);
+                }
+                else
+                {
+                    throw new Exception($"Unexpected token {Current.Type} in match at line {Current.Line}, column {Current.Column}");
+                }
+            }
+
+            Eat(TokenType.RBrace); // } für match
+
+            return new MatchNode(matchValue, cases, defaultCase, Current.Column, Current.Line);
+        }
         else if (Current.Type == TokenType.If)
         {
             Eat(TokenType.If);
