@@ -15,7 +15,8 @@
 - **Functions** for reusable code  
 - **Structs** (basic support)  
 - **Importing other scripts** for modularity  
-- **Semicolon required** after every statement, except at the end of a block  
+- **try/catch/finally/throw** for exception handling
+- **match/case** for simple conditions
 
 ---
 
