@@ -11,6 +11,7 @@ public class Interpreter
     private readonly Dictionary<string, StructDefNode> _structs = new();
     private readonly HashSet<string> _importedFiles = new();
 
+
     public Interpreter()
     {
         _scopes.Add(new Dictionary<string, object?>()); // global scope

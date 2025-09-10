@@ -59,7 +59,7 @@ public static class Program
 
                 try
                 {
-                    RunCode(interpreter, code);
+                    RunCode(interpreter,code);
                 }
                 catch (Exception ex)
                 {
@@ -76,9 +76,10 @@ public static class Program
 
         var parser = new Parser(tokens);
         var tree = parser.Parse();
-
         interpreter.Visit(tree);
     }
+   
+
 
     private static bool IsInputComplete(List<string> lines)
     {

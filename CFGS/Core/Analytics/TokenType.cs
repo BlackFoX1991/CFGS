@@ -1,6 +1,8 @@
 ﻿namespace CFGS.Core.Analytics;
 
 #pragma warning disable CS8602
+
+[Flags]
 public enum TokenType
 {
     Number,

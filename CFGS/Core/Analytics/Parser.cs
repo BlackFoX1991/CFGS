@@ -421,10 +421,12 @@ public class Parser(List<Token> tokens)
     private Node ExpBin()
     {
         var node = Unary();
-        while (Current.Type == TokenType.Pow)
+
+        if (Current?.Type == TokenType.Pow)
         {
-            Eat(Current.Type);
-            node = new BinOpNode(node, TokenType.Pow, Unary(), Current.Column, Current.Line);
+            Eat(TokenType.Pow);
+            var right = ExpBin(); // rekursiv rechts
+            node = new BinOpNode(node, TokenType.Pow, right, Current.Column, Current.Line);
         }
 
         return node;
