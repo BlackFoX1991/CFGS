@@ -116,19 +116,22 @@ namespace CFGS.Core.Runtime
 
     public class UnaryOpNode : Node
     {
-        public readonly Node Node;
-        public readonly TokenType Op;
+        public TokenType Op { get; }
+        public Node Node { get; }
+        public bool IsPrefix { get; }
+
         public override int Column { get; set; }
         public override int Line { get; set; }
 
-        public UnaryOpNode(TokenType op, Node node, int column, int line)
+        public UnaryOpNode(TokenType op, Node node, int column, int line, bool isPrefix = true) 
         {
             Op = op;
             Node = node;
-            Column = column;
-            Line = line;
-        }
+            IsPrefix = isPrefix;
 
+            Column = column;
+            Line = line;    
+        }
         public override string ToString() => $"({Op}{Node.ToString()})";
     }
 
@@ -169,11 +172,11 @@ namespace CFGS.Core.Runtime
     public class ArrayAccessNode : Node
     {
         public readonly Node Array;
-        public readonly Node Index;
+        public readonly Node? Index; // ← nullable
         public override int Column { get; set; }
         public override int Line { get; set; }
 
-        public ArrayAccessNode(Node array, Node index, int column, int line)
+        public ArrayAccessNode(Node array, Node? index, int column, int line)
         {
             Array = array;
             Index = index;
@@ -181,8 +184,67 @@ namespace CFGS.Core.Runtime
             Line = line;
         }
 
-        public override string ToString() => $"{Array.ToString()}[{Index.ToString()}]";
+        public override string ToString() => Index == null ? $"{Array}[]" : $"{Array}[{Index}]";
     }
+
+    public class ArrayDeleteNode : Node
+    {
+        public readonly Node Array;
+        public readonly Node Index;
+        public override int Column { get; set; }
+        public override int Line { get; set; }
+
+        public ArrayDeleteNode(Node array, Node index, int column, int line)
+        {
+            Array = array;
+            Index = index;
+            Column = column;
+            Line = line;
+        }
+
+        public override string ToString() => $"delete {Array}[{Index}]";
+    }
+
+
+
+    public class SliceNode : Node
+    {
+        public readonly Node Target;
+        public readonly Node Start;
+        public readonly Node End;
+        public override int Column { get; set; }
+        public override int Line { get; set; }
+
+        public SliceNode(Node target, Node start, Node end, int column, int line)
+        {
+            Target = target;
+            Start = start;
+            End = end;
+            Column = column;
+            Line = line;
+        }
+
+        public override string ToString() => $"{Target.ToString()}[{Start.ToString()}:{End.ToString()}]";
+    }
+
+    public class AppendNode : Node
+    {
+        public readonly Node Array;
+        public readonly Node Value;
+        public override int Column { get; set; }
+        public override int Line { get; set; }
+
+        public AppendNode(Node array, Node value, int column, int line)
+        {
+            Array = array;
+            Value = value;
+            Column = column;
+            Line = line;
+        }
+
+        public override string ToString() => $"{Array.ToString()}[] = {Value.ToString()}";
+    }
+
 
     public class BlockNode : Node
     {

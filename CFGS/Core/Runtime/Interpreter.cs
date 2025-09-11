@@ -54,6 +54,41 @@ public class Interpreter
             case PrintNode p:
                 Console.WriteLine(Eval(p.Value));
                 break;
+            case AppendNode append:
+                {
+                    var arrObj = Eval(append.Array);
+
+                    if (arrObj is not List<object?> list)
+                        throw new Exception("Trying to append to a non-array");
+
+                    var val = Eval(append.Value);
+                    list.Add(val);
+                    break;
+                }
+
+            case ArrayDeleteNode del:
+                {
+                    var arrObj = Eval(del.Array);
+                    if (arrObj is not List<object?> list)
+                        throw new Exception("Trying to delete from a non-array");
+
+                    if (del.Index == null)
+                    {
+                        // Index fehlt → alle Elemente löschen
+                        list.Clear();
+                    }
+                    else
+                    {
+                        var idx = Convert.ToInt32(Eval(del.Index));
+                        if (idx < 0 || idx >= list.Count)
+                            throw new Exception("Array index out of bounds");
+
+                        list.RemoveAt(idx);
+                    }
+                    break;
+                }
+
+
 
             case AssignNode a:
             {
@@ -91,8 +126,58 @@ public class Interpreter
                         throw new Exception("Invalid assignment target (not a struct instance)");
                     }
                 }
-                else
-                {
+                    else if (a.Target is SliceNode s)
+                    {
+                        var targetObj = Eval(s.Target);
+                        int start = Convert.ToInt32(Eval(s.Start));
+                        int end = Convert.ToInt32(Eval(s.End));
+                        var valueObj = Eval(a.Value);
+
+                        if (targetObj is List<object?> list)
+                        {
+                            if (valueObj is not List<object?> newList)
+                                throw new Exception("Slice assignment requires an array/list");
+
+                            if (start < 0) start = 0;
+                            if (end > list.Count) end = list.Count;
+
+                            int count = end - start;
+                            if (newList.Count != count)
+                                throw new Exception("Slice assignment length mismatch");
+
+                            for (int i = 0; i < count; i++)
+                                list[start + i] = newList[i];
+                        }
+                        else if (targetObj is string str)
+                        {
+                            if (valueObj is not string newStr)
+                                throw new Exception("Slice assignment requires a string");
+
+                            if (start < 0) start = 0;
+                            if (end > str.Length) end = str.Length;
+
+                            if ((end - start) != newStr.Length)
+                                throw new Exception("Slice assignment length mismatch");
+
+                            var chars = str.ToCharArray();
+                            for (int i = 0; i < newStr.Length; i++)
+                                chars[start + i] = newStr[i];
+
+                            // Falls Variable direkt ein VarNode ist:
+                            if (s.Target is VarNode vn)
+                                SetVariable(vn.Name, new string(chars));
+                            else
+                                throw new Exception("Unsupported slice target for string assignment");
+                        }
+                        else
+                        {
+                            throw new Exception("Slice assignment can only be applied to arrays or strings");
+                        }
+                    }
+
+
+                    else
+                    {
                     throw new Exception("Invalid assignment target");
                 }
 
@@ -415,15 +500,60 @@ public class Interpreter
                     TokenType.GreaterEq => lft >= rght,
                     _ => throw new Exception($"Unknown binary operator at line {node.Line}, column {node.Column}.")
                 };
+            case SliceNode s:
+                {
+                    var target = Eval(s.Target);
+
+                    int start = Convert.ToInt32(Eval(s.Start));
+                    int end = Convert.ToInt32(Eval(s.End));
+
+                    if (target is List<object?> list)
+                    {
+                        if (start < 0) start = 0;
+                        if (end > list.Count) end = list.Count;
+                        return list.GetRange(start, end - start);
+                    }
+                    else if (target is string str)
+                    {
+                        if (start < 0) start = 0;
+                        if (end > str.Length) end = str.Length;
+                        return str.Substring(start, end - start);
+                    }
+                    else
+                    {
+                        throw new Exception("Slice can only be applied to arrays or strings");
+                    }
+                }
 
 
             case UnaryOpNode u:
-                dynamic? val = Eval(u.Node);
-                return u.Op switch
+                if (u.Op == TokenType.Minus)
+                    return -Convert.ToDouble(Eval(u.Node));
+
+                if (u.Op == TokenType.Not)
+                    return !Convert.ToBoolean(Eval(u.Node));
+
+                if (u.Op == TokenType.PlusPlus || u.Op == TokenType.MinusMinus)
                 {
-                    TokenType.Minus => -val,
-                    _ => throw new Exception($"Unknown unary operator at line {node.Line}, column {node.Column}.")
-                };
+                    if (u.Node is VarNode v)
+                    {
+                        var oldVal = Convert.ToDouble(GetVariable(v.Name));
+                        var newVal = u.Op == TokenType.PlusPlus ? oldVal + 1 : oldVal - 1;
+
+                        SetVariable(v.Name, newVal);
+
+                        return u.IsPrefix ? newVal : oldVal;
+                    }
+                    else
+                    {
+                        throw new Exception("Increment/decrement can only be applied to variables");
+                    }
+                }
+
+                throw new Exception($"Unknown unary operator {u.Op} at line {u.Line}, column {u.Column}");
+
+
+
 
             default:
                 throw new Exception($"Unknown node type {node.GetType().Name} at line {node.Line}, column {node.Column}");

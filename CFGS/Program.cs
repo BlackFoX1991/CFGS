@@ -76,6 +76,7 @@ public static class Program
 
         var parser = new Parser(tokens);
         var tree = parser.Parse();
+        //Console.WriteLine(tree.ToString());
         interpreter.Visit(tree);
     }
    

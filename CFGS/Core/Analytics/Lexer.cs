@@ -23,7 +23,8 @@ public class Lexer(string text)
         {"finally", TokenType.Finally },
         {"throw", TokenType.Throw },
         {"match", TokenType.Match },
-        {"case", TokenType.Case }
+        {"case", TokenType.Case },
+        {"delete",TokenType.Delete}
     };
 
     private void Advance() {
@@ -120,12 +121,22 @@ public class Lexer(string text)
                         if(Current == '\n')Advance();
                         break;
                     case '+':
-                        tokens.Add(new Token(TokenType.Plus,"",_line,_column));
                         Advance();
+                        if (Current == '+')
+                        {
+                            Advance();
+                            tokens.Add(new Token(TokenType.PlusPlus, "", _line, _column));
+                        }
+                        else tokens.Add(new Token(TokenType.Plus, "", _line, _column));
                         break;
                     case '-':
-                        tokens.Add(new Token(TokenType.Minus,"",_line,_column));
                         Advance();
+                        if (Current == '-')
+                        {
+                            Advance();
+                            tokens.Add(new Token(TokenType.MinusMinus, "", _line, _column));
+                        }
+                        else tokens.Add(new Token(TokenType.Minus, "", _line, _column));
                         break;
                     case '^':
                         tokens.Add(new Token(TokenType.BitXor,"",_line,_column));
@@ -167,7 +178,8 @@ public class Lexer(string text)
                             Advance();
                             tokens.Add(new Token(TokenType.NotEquals,"",_line,_column));
                         }
-
+                        else 
+                            tokens.Add(new Token(TokenType.Not, "", _line, _column));
                         break;
                     case '<':
                         Advance();
@@ -255,6 +267,10 @@ public class Lexer(string text)
                         break;
                     case ']':
                         tokens.Add(new Token(TokenType.RBracket,"",_line,_column));
+                        Advance();
+                        break;
+                    case ':':
+                        tokens.Add(new Token(TokenType.Colon, "", _line, _column));
                         Advance();
                         break;
                     default: Advance(); break;

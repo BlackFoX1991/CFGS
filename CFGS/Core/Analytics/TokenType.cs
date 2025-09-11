@@ -57,5 +57,10 @@ public enum TokenType
     Throw,
     Match,
     Case,
-    Default
+    Default,
+    Not,
+    PlusPlus,
+    MinusMinus,
+    Colon,
+    Delete
 }

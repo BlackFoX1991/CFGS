@@ -36,6 +36,24 @@ public class Parser(List<Token> tokens)
             Eat(TokenType.Semicolon);
             return new PrintNode(val, Current.Column, Current.Line);
         }
+        else if (Current.Type == TokenType.Delete)
+        {
+            Eat(TokenType.Delete);
+            var arrNode = Expr();
+
+            Node? index = null;
+
+            if (arrNode is ArrayAccessNode aa)
+            {
+                index = aa.Index; // könnte null sein (Append/leer)
+                arrNode = aa.Array;
+            }
+
+            Eat(TokenType.Semicolon);
+            return new ArrayDeleteNode(arrNode, index, Current.Column, Current.Line);
+        }
+
+
         else if (Current.Type == TokenType.Import)
         {
             Eat(TokenType.Import);
@@ -77,7 +95,7 @@ public class Parser(List<Token> tokens)
             Eat(TokenType.Semicolon);
             return new ReturnNode(val, Current.Column, Current.Line);
         }
-        else if(Current.Type == TokenType.Try)
+        else if (Current.Type == TokenType.Try)
         {
             Eat(TokenType.Try);
 
@@ -119,7 +137,7 @@ public class Parser(List<Token> tokens)
             Eat(TokenType.Semicolon);
             return new ThrowNode(val, Current.Column, Current.Line);
         }
-        else if(Current.Type == TokenType.Match)
+        else if (Current.Type == TokenType.Match)
         {
             Eat(TokenType.Match); // match
             Eat(TokenType.LParen);
@@ -250,7 +268,10 @@ public class Parser(List<Token> tokens)
         // Generische Behandlung für Zuweisungen oder Ausdruck-Statements:
         // Parst eine Primary/Expression-ähnliche linke Seite und prüft auf Assign.
         // Das ermöglicht z.B. p.z = ..., arr[0] = ..., x = ...
-        if (Current.Type == TokenType.Identifier || Current.Type == TokenType.LParen || Current.Type == TokenType.LBracket || Current.Type == TokenType.New || Current.Type == TokenType.Number || Current.Type == TokenType.String || Current.Type == TokenType.Boolean || Current.Type == TokenType.Minus)
+        if (Current.Type == TokenType.Identifier || Current.Type == TokenType.LParen || Current.Type == TokenType.LBracket
+     || Current.Type == TokenType.New || Current.Type == TokenType.Number || Current.Type == TokenType.String
+     || Current.Type == TokenType.Boolean || Current.Type == TokenType.Minus
+     || Current.Type == TokenType.PlusPlus || Current.Type == TokenType.MinusMinus) // <-- hier hinzugefügt
         {
             var left = Expr();
 
@@ -261,11 +282,25 @@ public class Parser(List<Token> tokens)
                 var right = Expr();
                 Eat(TokenType.Semicolon);
 
-                if (left is VarNode || left is ArrayAccessNode || left is MemberAccessNode)
-                    return new AssignNode(left, right, Current.Column, Current.Line);
+                switch (left)
+                {
+                    case VarNode:
+                    case MemberAccessNode:
+                    case SliceNode:
+                        return new AssignNode(left, right, Current.Column, Current.Line);
 
-                throw new Exception("Invalid assignment target");
+                    case ArrayAccessNode aa:
+                        // Prüfen, ob Index fehlt (d.h. leeres [] → Append)
+                        if (aa.Index is null)
+                            return new AppendNode(aa.Array, right, Current.Column, Current.Line);
+                        else
+                            return new AssignNode(aa, right, Current.Column, Current.Line);
+
+                    default:
+                        throw new Exception("Invalid assignment target");
+                }
             }
+
 
             // Funktionsaufruf als Statement (Expr kann ein FuncCallNode sein)
             if (left is FuncCallNode fc)
@@ -274,10 +309,11 @@ public class Parser(List<Token> tokens)
                 return fc;
             }
 
-            // Sonst: Ausdrucksstatement (z. B. standalone Expr ;)
+            // Ausdrucksstatement (z. B. standalone Expr, inkl. ++/-- als Statement)
             Eat(TokenType.Semicolon);
             return left;
         }
+
 
         // Falls nichts passt -> Fehler
         throw new Exception($"Unexpected token {Current.Type} at line {Current.Line}, column {Current.Column}.");
@@ -434,15 +470,34 @@ public class Parser(List<Token> tokens)
 
     private Node Unary()
     {
-        if (Current.Type == TokenType.Minus)
+        if (Current.Type == TokenType.Minus || Current.Type == TokenType.Not
+            || Current.Type == TokenType.PlusPlus || Current.Type == TokenType.MinusMinus)
         {
             var op = Current.Type;
-            Eat(TokenType.Minus);
-            return new UnaryOpNode(op, Unary(), Current.Column, Current.Line);
+            Eat(op);
+            return new UnaryOpNode(op, Unary(), Current.Column, Current.Line, isPrefix: true);
         }
 
-        return Primary();
+        return Postfix();
     }
+
+
+    private Node Postfix()
+    {
+        var node = Primary();
+
+        while (Current.Type == TokenType.PlusPlus || Current.Type == TokenType.MinusMinus)
+        {
+            var op = Current.Type;
+            Eat(op);
+            node = new UnaryOpNode(op, node, Current.Column, Current.Line, isPrefix: false);
+        }
+
+        return node;
+    }
+
+
+
 
     private Node Primary()
     {
@@ -513,9 +568,41 @@ public class Parser(List<Token> tokens)
                 if (Current.Type == TokenType.LBracket)
                 {
                     Eat(TokenType.LBracket);
-                    var index = Expr();
+
+                    Node? start = null;
+                    Node? end = null;
+
+                    // Prüfen auf Slice oder Index oder Append
+                    if (Current.Type == TokenType.RBracket)
+                    {
+                        // Leere Klammern → Append
+                        node = new ArrayAccessNode(node, null, Current.Column, Current.Line);
+                    }
+                    else if (Current.Type != TokenType.Colon)
+                    {
+                        start = Expr();
+                    }
+
+                    if (Current.Type == TokenType.Colon)
+                    {
+                        Eat(TokenType.Colon);
+                        if (Current.Type != TokenType.RBracket)
+                        {
+                            end = Expr();
+                        }
+
+                        if (start == null) start = new NumberNode(0, Current.Column, Current.Line);
+                        if (end == null) throw new Exception("Slice end index expected");
+
+                        node = new SliceNode(node, start, end, Current.Column, Current.Line);
+                    }
+                    else if (start != null)
+                    {
+                        // Normale Index-Zugriffe
+                        node = new ArrayAccessNode(node, start, Current.Column, Current.Line);
+                    }
+
                     Eat(TokenType.RBracket);
-                    node = new ArrayAccessNode(node, index, Current.Column, Current.Line);
                 }
                 else if (Current.Type == TokenType.Dot)
                 {
@@ -525,6 +612,8 @@ public class Parser(List<Token> tokens)
                     node = new MemberAccessNode(node, member, Current.Column, Current.Line);
                 }
             }
+
+
 
             return node;
         }
