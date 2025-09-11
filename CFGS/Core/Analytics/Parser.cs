@@ -4,6 +4,7 @@ using CFGS.Core.Runtime;
 namespace CFGS.Core.Analytics;
 
 #pragma warning disable CS8602
+#pragma warning disable CS8604
 public class Parser(List<Token> tokens)
 {
     private int _pos;
@@ -572,34 +573,35 @@ public class Parser(List<Token> tokens)
                     Node? start = null;
                     Node? end = null;
 
-                    // Prüfen auf Slice oder Index oder Append
                     if (Current.Type == TokenType.RBracket)
                     {
                         // Leere Klammern → Append
                         node = new ArrayAccessNode(node, null, Current.Column, Current.Line);
                     }
-                    else if (Current.Type != TokenType.Colon)
+                    else
                     {
-                        start = Expr();
-                    }
-
-                    if (Current.Type == TokenType.Colon)
-                    {
-                        Eat(TokenType.Colon);
-                        if (Current.Type != TokenType.RBracket)
+                        // Prüfen auf Slice oder Index
+                        if (Current.Type != TokenType.Colon)
                         {
-                            end = Expr();
+                            start = Expr();
                         }
 
-                        if (start == null) start = new NumberNode(0, Current.Column, Current.Line);
-                        if (end == null) throw new Exception("Slice end index expected");
+                        if (Current.Type == TokenType.Colon)
+                        {
+                            Eat(TokenType.Colon);
+                            if (Current.Type != TokenType.RBracket)
+                            {
+                                end = Expr();
+                            }
 
-                        node = new SliceNode(node, start, end, Current.Column, Current.Line);
-                    }
-                    else if (start != null)
-                    {
-                        // Normale Index-Zugriffe
-                        node = new ArrayAccessNode(node, start, Current.Column, Current.Line);
+                            // Start und End sind optional
+                            node = new SliceNode(node, start, end, Current.Column, Current.Line);
+                        }
+                        else
+                        {
+                            // Normale Index-Zugriffe
+                            node = new ArrayAccessNode(node, start ?? throw new Exception("Index expected"), Current.Column, Current.Line);
+                        }
                     }
 
                     Eat(TokenType.RBracket);
@@ -612,6 +614,7 @@ public class Parser(List<Token> tokens)
                     node = new MemberAccessNode(node, member, Current.Column, Current.Line);
                 }
             }
+
 
 
 

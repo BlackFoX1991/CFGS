@@ -190,7 +190,7 @@ namespace CFGS.Core.Runtime
     public class ArrayDeleteNode : Node
     {
         public readonly Node Array;
-        public readonly Node Index;
+        public readonly Node? Index;
         public override int Column { get; set; }
         public override int Line { get; set; }
 
@@ -210,8 +210,8 @@ namespace CFGS.Core.Runtime
     public class SliceNode : Node
     {
         public readonly Node Target;
-        public readonly Node Start;
-        public readonly Node End;
+        public readonly Node? Start;
+        public readonly Node? End;
         public override int Column { get; set; }
         public override int Line { get; set; }
 
@@ -224,7 +224,7 @@ namespace CFGS.Core.Runtime
             Line = line;
         }
 
-        public override string ToString() => $"{Target.ToString()}[{Start.ToString()}:{End.ToString()}]";
+        public override string ToString() => $"{Target.ToString()}[{Start?.ToString()}:{End?.ToString()}]";
     }
 
     public class AppendNode : Node
@@ -362,6 +362,10 @@ namespace CFGS.Core.Runtime
 
         public override string ToString() => $"import {FileName}";
     }
+
+   
+
+
 
     public class FuncDefNode : Node
     {

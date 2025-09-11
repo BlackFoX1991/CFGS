@@ -1,9 +1,12 @@
 ﻿using CFGS.Core.Analytics;
 using Microsoft.VisualBasic;
+using System.Text;
+using System.Text.Json;
 
 namespace CFGS.Core.Runtime;
 
 #pragma warning disable CS8602
+#pragma warning disable CS8604
 public class Interpreter
 {
     private readonly List<Dictionary<string, object?>> _scopes = new();
@@ -42,6 +45,31 @@ public class Interpreter
         // not found: define in current scope
         _scopes[^1][name] = value;
     }
+    private string FormatValue(object? value)
+    {
+        if (value is null) return "null";
+
+        // Strings mit Anführungszeichen
+        if (value is string s)
+            return $"\"{s}\"";
+
+        // Arrays / Listen
+        if (value is List<object?> list)
+            return "[" + string.Join(", ", list.Select(FormatValue)) + "]";
+
+        // Dictionaries (z. B. Struct als Dictionary gespeichert)
+        if (value is Dictionary<string, object?> dict)
+            return "{" + string.Join(", ", dict.Select(kv => $"{kv.Key}: {FormatValue(kv.Value)}")) + "}";
+
+        // StructInstance mit Feldern
+        if (value is StructInstance si)
+            return "{" + string.Join(", ", si.Fields.Select(kv => $"{kv.Key}: {FormatValue(kv.Value)}")) + "}";
+
+        // Fallback: normale .ToString()
+        return value.ToString() ?? "null";
+    }
+
+
 
     public void Visit(Node node)
     {
@@ -52,8 +80,14 @@ public class Interpreter
                 break;
 
             case PrintNode p:
-                Console.WriteLine(Eval(p.Value));
-                break;
+                {
+                    var val = Eval(p.Value);
+                    Console.WriteLine(FormatValue(val));
+                    
+                    break;
+                }
+
+
             case AppendNode append:
                 {
                     var arrObj = Eval(append.Array);
@@ -442,6 +476,34 @@ public class Interpreter
                     if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}().");
                     return Console.ReadKey();
                 }
+                else if(fc.Name == "fopen")
+                {
+                    if (fc.Args.Count != 2) throw new Exception($"Invalid argument for {fc.Name}().");
+                    var arg = Eval(fc.Args[0]);
+                    dynamic? arg0 = Eval(fc.Args[1]);
+                   
+                    return new FileStream(arg.ToString(), (FileMode)arg0);
+                }
+                else if(fc.Name == "fwrite")
+                {
+                    if (fc.Args.Count != 2) throw new Exception($"Invalid argument for {fc.Name}().");
+                    FileStream? arg0 = Eval(fc.Args[0]) as FileStream;
+                    dynamic? arg1 = (Eval(fc.Args[1]));
+                    arg0.Write(Encoding.UTF8.GetBytes((string)arg1));
+                    
+                    return 0;
+                }
+                else if(fc.Name == "pretty")
+                {
+                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}().");
+                    return FormatValue(Eval(fc.Args[0]));
+                }
+                else if (fc.Name == "fclose")
+                {
+                    FileStream? arg0 = Eval(fc.Args[0]) as FileStream;
+                    arg0.Close();
+                    return 0;
+                }
 
                 if (!_functions.TryGetValue(fc.Name, out var fdef))
                     throw new Exception($"Function not defined: {fc.Name}");
@@ -504,26 +566,27 @@ public class Interpreter
                 {
                     var target = Eval(s.Target);
 
-                    int start = Convert.ToInt32(Eval(s.Start));
-                    int end = Convert.ToInt32(Eval(s.End));
+                    int start = s.Start != null ? Convert.ToInt32(Eval(s.Start)) : 0;
+                    int end = s.End != null ? Convert.ToInt32(Eval(s.End)) : (target is List<object?> list ? list.Count : target is string str ? str.Length : 0);
 
-                    if (target is List<object?> list)
+                    if (target is List<object?> slist)
                     {
                         if (start < 0) start = 0;
-                        if (end > list.Count) end = list.Count;
-                        return list.GetRange(start, end - start);
+                        if (end > slist.Count) end = slist.Count;
+                        return slist.GetRange(start, end - start);
                     }
-                    else if (target is string str)
+                    else if (target is string sstr)
                     {
                         if (start < 0) start = 0;
-                        if (end > str.Length) end = str.Length;
-                        return str.Substring(start, end - start);
+                        if (end > sstr.Length) end = sstr.Length;
+                        return sstr.Substring(start, end - start);
                     }
                     else
                     {
                         throw new Exception("Slice can only be applied to arrays or strings");
                     }
                 }
+
 
 
             case UnaryOpNode u:
@@ -535,22 +598,58 @@ public class Interpreter
 
                 if (u.Op == TokenType.PlusPlus || u.Op == TokenType.MinusMinus)
                 {
-                    if (u.Node is VarNode v)
-                    {
-                        var oldVal = Convert.ToDouble(GetVariable(v.Name));
-                        var newVal = u.Op == TokenType.PlusPlus ? oldVal + 1 : oldVal - 1;
+                    double oldVal;
+                    double newVal;
 
-                        SetVariable(v.Name, newVal);
-
-                        return u.IsPrefix ? newVal : oldVal;
-                    }
-                    else
+                    switch (u.Node)
                     {
-                        throw new Exception("Increment/decrement can only be applied to variables");
+                        case VarNode v:
+                            oldVal = Convert.ToDouble(GetVariable(v.Name));
+                            newVal = u.Op == TokenType.PlusPlus ? oldVal + 1 : oldVal - 1;
+                            SetVariable(v.Name, newVal);
+                            return u.IsPrefix ? newVal : oldVal;
+
+                        case ArrayAccessNode aa:
+                            {
+                                var arrObj = Eval(aa.Array);
+                                if (arrObj is not List<object?> list)
+                                    throw new Exception("Trying to increment/decrement a non-array element");
+
+                                int idx = Convert.ToInt32(Eval(aa.Index));
+                                if (idx < 0 || idx >= list.Count)
+                                    throw new Exception("Array index out of bounds");
+
+                                oldVal = Convert.ToDouble(list[idx]);
+                                newVal = u.Op == TokenType.PlusPlus ? oldVal + 1 : oldVal - 1;
+                                list[idx] = newVal;
+
+                                return u.IsPrefix ? newVal : oldVal;
+                            }
+
+                        case MemberAccessNode ma:
+                            {
+                                var obj = Eval(ma.ObjectNode);
+                                if (obj is not StructInstance si)
+                                    throw new Exception("Trying to increment/decrement a non-struct field");
+
+                                if (!si.Fields.ContainsKey(ma.MemberName))
+                                    throw new Exception($"Struct {si.Name} has no field {ma.MemberName}");
+
+                                oldVal = Convert.ToDouble(si.Fields[ma.MemberName]);
+                                newVal = u.Op == TokenType.PlusPlus ? oldVal + 1 : oldVal - 1;
+                                si.Fields[ma.MemberName] = newVal;
+
+                                return u.IsPrefix ? newVal : oldVal;
+                            }
+
+                        default:
+                            throw new Exception("Increment/decrement can only be applied to variables, array elements, or struct fields");
                     }
                 }
 
+
                 throw new Exception($"Unknown unary operator {u.Op} at line {u.Line}, column {u.Column}");
+
 
 
 

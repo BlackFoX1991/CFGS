@@ -24,6 +24,7 @@ public class Lexer(string text)
         {"throw", TokenType.Throw },
         {"match", TokenType.Match },
         {"case", TokenType.Case },
+        {"default", TokenType.Default },
         {"delete",TokenType.Delete}
     };
 
