@@ -17,6 +17,8 @@
 - **Importing other scripts** for modularity  
 - **try/catch/finally/throw** for exception handling
 - **match/case** for simple conditions
+- **Arrays** arr = [1,2,3,["Hello","World"], 3.14]; delete arr[1]; delete arr[3];
+- **Postfix** x = 5; x++; print(x); --x; ++x;
 
 ---
 
