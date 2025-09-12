@@ -254,16 +254,28 @@ public class Parser(List<Token> tokens)
             Eat(TokenType.LBrace);
 
             var fields = new List<string>();
+            var methods = new List<Node>();
             while (Current.Type != TokenType.RBrace)
             {
-                if (Current.Type != TokenType.Identifier)
+
+                if (Current.Type == TokenType.Identifier)
+                {
+                    fields.Add(Current.Value);
+                    Eat(TokenType.Identifier);
+                    Eat(TokenType.Semicolon);
+                }
+                else if (Current.Type == TokenType.Func)
+                {
+                    methods.Add(Statement());
+                }
+                else
                     throw new Exception($"Expected identifier in struct body, got {Current.Type} at line {Current.Line}, column {Current.Column}.");
-                fields.Add(Current.Value);
-                Eat(TokenType.Identifier);
-                Eat(TokenType.Semicolon);
+
+
+
             }
             Eat(TokenType.RBrace);
-            return new StructDefNode(structName, fields, Current.Column, Current.Line);
+            return new StructDefNode(structName, fields,methods, Current.Column, Current.Line);
         }
 
         // Generische Behandlung für Zuweisungen oder Ausdruck-Statements:

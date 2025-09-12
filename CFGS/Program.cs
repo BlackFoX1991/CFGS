@@ -63,7 +63,7 @@ public static class Program
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Fehler: {ex.Message}");
+                    Console.WriteLine($"Error: {ex.Message}");
                 }
             }
         }

@@ -23,12 +23,12 @@ public class Interpreter
     private void PushScope() => _scopes.Add(new Dictionary<string, object?>());
     private void PopScope() => _scopes.RemoveAt(_scopes.Count - 1);
 
-    private object? GetVariable(string name)
+    private object? GetVariable(string name, int ln, int col)
     {
         for (int i = _scopes.Count - 1; i >= 0; i--)
             if (_scopes[i].ContainsKey(name))
                 return _scopes[i][name];
-        throw new Exception($"Variable {name} not defined");
+        throw new Exception($"Variable {name} not defined, line {ln}, column {col}.");
     }
 
     private void SetVariable(string name, object? value)
@@ -50,8 +50,8 @@ public class Interpreter
         if (value is null) return "null";
 
         // Strings mit Anführungszeichen
-        if (value is string s)
-            return $"\"{s}\"";
+        if (value is StringNode s)
+            return $"\"{s.Value}\"";
 
         // Arrays / Listen
         if (value is List<object?> list)
@@ -93,7 +93,7 @@ public class Interpreter
                     var arrObj = Eval(append.Array);
 
                     if (arrObj is not List<object?> list)
-                        throw new Exception("Trying to append to a non-array");
+                        throw new Exception($"Trying to append to a non-array, line {append.Line}, column {append.Column}.");
 
                     var val = Eval(append.Value);
                     list.Add(val);
@@ -104,7 +104,7 @@ public class Interpreter
                 {
                     var arrObj = Eval(del.Array);
                     if (arrObj is not List<object?> list)
-                        throw new Exception("Trying to delete from a non-array");
+                        throw new Exception($"Trying to delete from a non-array, line {del.Line}, column {del.Column}.");
 
                     if (del.Index == null)
                     {
@@ -115,7 +115,7 @@ public class Interpreter
                     {
                         var idx = Convert.ToInt32(Eval(del.Index));
                         if (idx < 0 || idx >= list.Count)
-                            throw new Exception("Array index out of bounds");
+                            throw new Exception($"Array index out of bounds, line {del.Line}, column {del.Column}.");
 
                         list.RemoveAt(idx);
                     }
@@ -136,13 +136,13 @@ public class Interpreter
                 {
                     var arrayObj = Eval(aa.Array);
                     if (arrayObj is not List<object?> list)
-                        throw new Exception("Trying to index a non-array");
+                        throw new Exception($"Trying to index a non-array, line {a.Line}, column {a.Column}.");
 
                     var idxObj = Eval(aa.Index);
                     int idx = Convert.ToInt32(idxObj);
 
                     if (idx < 0 || idx >= list.Count)
-                        throw new Exception("Array index out of bounds");
+                        throw new Exception($"Array index out of bounds, line {a.Line}, column {a.Column}.");
 
                     list[idx] = val;
                 }
@@ -152,12 +152,12 @@ public class Interpreter
                     if (obj is StructInstance si)
                     {
                         if (!si.Fields.ContainsKey(ma.MemberName))
-                            throw new Exception($"Struct {si.Name} has no field {ma.MemberName}");
+                            throw new Exception($"Struct {si.Name} has no field {ma.MemberName}, line {ma.Line}, column {ma.Column}.");
                         si.Fields[ma.MemberName] = val;
                     }
                     else
                     {
-                        throw new Exception("Invalid assignment target (not a struct instance)");
+                        throw new Exception($"Invalid assignment target (not a struct instance), line {ma.Line}, column {ma.Column}.");
                     }
                 }
                     else if (a.Target is SliceNode s)
@@ -170,14 +170,14 @@ public class Interpreter
                         if (targetObj is List<object?> list)
                         {
                             if (valueObj is not List<object?> newList)
-                                throw new Exception("Slice assignment requires an array/list");
+                                throw new Exception($"Slice assignment requires an array/list, line {a.Line}, column {a.Column}.");
 
                             if (start < 0) start = 0;
                             if (end > list.Count) end = list.Count;
 
                             int count = end - start;
                             if (newList.Count != count)
-                                throw new Exception("Slice assignment length mismatch");
+                                throw new Exception($"Slice assignment length mismatch, line {a.Line}, column {a.Column}.");
 
                             for (int i = 0; i < count; i++)
                                 list[start + i] = newList[i];
@@ -185,13 +185,13 @@ public class Interpreter
                         else if (targetObj is string str)
                         {
                             if (valueObj is not string newStr)
-                                throw new Exception("Slice assignment requires a string");
+                                throw new Exception($"Slice assignment requires a string, line {a.Line} , column  {a.Column}.");
 
                             if (start < 0) start = 0;
                             if (end > str.Length) end = str.Length;
 
                             if ((end - start) != newStr.Length)
-                                throw new Exception("Slice assignment length mismatch");
+                                throw new Exception($"Slice assignment length mismatch, line {a.Line}  , column   {a.Column}.");
 
                             var chars = str.ToCharArray();
                             for (int i = 0; i < newStr.Length; i++)
@@ -201,18 +201,18 @@ public class Interpreter
                             if (s.Target is VarNode vn)
                                 SetVariable(vn.Name, new string(chars));
                             else
-                                throw new Exception("Unsupported slice target for string assignment");
+                                throw new Exception($"Unsupported slice target for string assignment, line {a.Line}  , column   {a.Column}.");
                         }
                         else
                         {
-                            throw new Exception("Slice assignment can only be applied to arrays or strings");
+                            throw new Exception($"Slice assignment can only be applied to arrays or strings, line {a.Line}  , column   {a.Column}.");
                         }
                     }
 
 
                     else
                     {
-                    throw new Exception("Invalid assignment target");
+                    throw new Exception($"Invalid assignment target, line {a.Line}   , column    {a.Column}.");
                 }
 
                 break;
@@ -368,7 +368,7 @@ public class Interpreter
             case StringNode s: return s.Value;
             case CharNode c: return c.Value;
             case BoolNode b: return b.Value;
-            case VarNode v: return GetVariable(v.Name);
+            case VarNode v: return GetVariable(v.Name, v.Line,v.Column);
 
             case ArrayNode a:
                 var result = new List<object?>();
@@ -387,7 +387,7 @@ public class Interpreter
                         int idx = Convert.ToInt32(idxObj);
 
                         if (idx < 0 || idx >= list.Count)
-                            throw new Exception("Array index out of bounds");
+                            throw new Exception($"Array index out of bounds, line {ac.Line}, column {ac.Column}.");
 
                         return list[idx];
                     }
@@ -397,18 +397,18 @@ public class Interpreter
                         int idx = Convert.ToInt32(idxStr);
 
                         if (idx < 0 || idx >= stx.Length)
-                            throw new Exception("String index out of bounds");
+                            throw new Exception($"String index out of bounds, line {ac.Line}, column {ac.Column}.");
 
                         return Convert.ToChar(stx[idx]);
                     }
                     default:
-                        throw new Exception("Trying to index a non-array");
+                        throw new Exception($"Trying to index a non-array, line {ac.Line}, column {ac.Column}.");
                 }
             }
 
             case StructInstanceNode si:
                 if (!_structs.TryGetValue(si.StructName, out var sdef))
-                    throw new Exception($"Struct not defined: {si.StructName}");
+                    throw new Exception($"Struct not defined '{si.StructName}', line {si.Line}, column {si.Column}.");
 
                 var instance = new Dictionary<string, object?>();
                 for (int i = 0; i < sdef.Fields.Count; i++)
@@ -425,7 +425,7 @@ public class Interpreter
                 if (obj is StructInstance sInst)
                 {
                     if (!sInst.Fields.TryGetValue(ma.MemberName, out var eval))
-                        throw new Exception($"Struct {sInst.Name} has no field {ma.MemberName}");
+                        throw new Exception($"Struct {sInst.Name} has no field '{ma.MemberName}', line {ma.Line}, column {ma.Column}.");
                     return eval;
                 }
                 throw new Exception($"Member access on non-struct instance at line {ma.Line}, column {ma.Column}.");
@@ -434,51 +434,51 @@ public class Interpreter
             case FuncCallNode fc:
                 if (fc.Name == "len")
                 {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for '{fc.Name}()', line {fc.Line}, column {fc.Column}.");
                     var arg = Eval(fc.Args[0]);
                     return arg switch
                     {
                         List<object?> list => list.Count,
                         string st => st.Length,
-                        _ => throw new Exception($"Invalid argument for {fc.Name}().")
+                        _ => throw new Exception($"Invalid argument for {fc.Name}(), line {fc.Line}, column {fc.Column}.")
                     };
                 }
                 else if(fc.Name == "toint32")
                 {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line {fc.Line}, column {fc.Column}.");
                     var arg = Eval(fc.Args[0]);
                     return Convert.ToInt32(arg);
                 }
                 else if (fc.Name == "toint64")
                 {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line  {fc.Line} , column  {fc.Column} .");
                     var arg = Eval(fc.Args[0]);
                     return Convert.ToInt64(arg);
                 }
                 else if (fc.Name == "todbl")
                 {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line  {fc.Line} , column  {fc.Column} .");
                     var arg = Eval(fc.Args[0]);
                     return Convert.ToDouble(arg);
                 }
                 else if(fc.Name == "getl")
                 {
-                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}(), line  {fc.Line} , column  {fc.Column} .");
                     return Console.ReadLine();
                 }
                 else if (fc.Name == "getc")
                 {
-                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
                     return Console.Read();
                 }
                 else if (fc.Name == "getk")
                 {
-                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
                     return Console.ReadKey();
                 }
                 else if(fc.Name == "fopen")
                 {
-                    if (fc.Args.Count != 2) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count != 2) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
                     var arg = Eval(fc.Args[0]);
                     dynamic? arg0 = Eval(fc.Args[1]);
                    
@@ -486,7 +486,7 @@ public class Interpreter
                 }
                 else if(fc.Name == "fwrite")
                 {
-                    if (fc.Args.Count != 2) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count != 2) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
                     FileStream? arg0 = Eval(fc.Args[0]) as FileStream;
                     dynamic? arg1 = (Eval(fc.Args[1]));
                     arg0.Write(Encoding.UTF8.GetBytes((string)arg1));
@@ -495,18 +495,19 @@ public class Interpreter
                 }
                 else if(fc.Name == "pretty")
                 {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}().");
+                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
                     return FormatValue(Eval(fc.Args[0]));
                 }
                 else if (fc.Name == "fclose")
                 {
+                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
                     FileStream? arg0 = Eval(fc.Args[0]) as FileStream;
                     arg0.Close();
                     return 0;
                 }
 
                 if (!_functions.TryGetValue(fc.Name, out var fdef))
-                    throw new Exception($"Function not defined: {fc.Name}");
+                    throw new Exception($"Function not defined: {fc.Name}, line {fc.Line}, column {fc.Column}.");
                 var args = new List<object?>();
                 foreach (var a in fc.Args) args.Add(Eval(a));
                 return CallFunction(fdef, args);
@@ -560,7 +561,7 @@ public class Interpreter
                     TokenType.LessEq => lft <= rght,
                     TokenType.Greater => lft > rght,
                     TokenType.GreaterEq => lft >= rght,
-                    _ => throw new Exception($"Unknown binary operator at line {node.Line}, column {node.Column}.")
+                    _ => throw new Exception($"Unknown binary operator at line {b.Line}, column {b.Column}.")
                 };
             case SliceNode s:
                 {
@@ -583,7 +584,7 @@ public class Interpreter
                     }
                     else
                     {
-                        throw new Exception("Slice can only be applied to arrays or strings");
+                        throw new Exception($"Slice can only be applied to arrays or strings, line {s.Line}, column {s.Column}.");
                     }
                 }
 
@@ -604,7 +605,7 @@ public class Interpreter
                     switch (u.Node)
                     {
                         case VarNode v:
-                            oldVal = Convert.ToDouble(GetVariable(v.Name));
+                            oldVal = Convert.ToDouble(GetVariable(v.Name, v.Line, v.Column));
                             newVal = u.Op == TokenType.PlusPlus ? oldVal + 1 : oldVal - 1;
                             SetVariable(v.Name, newVal);
                             return u.IsPrefix ? newVal : oldVal;
@@ -613,11 +614,11 @@ public class Interpreter
                             {
                                 var arrObj = Eval(aa.Array);
                                 if (arrObj is not List<object?> list)
-                                    throw new Exception("Trying to increment/decrement a non-array element");
+                                    throw new Exception($"Trying to increment/decrement a non-array element, line {aa.Line}, column {aa.Column}.");
 
                                 int idx = Convert.ToInt32(Eval(aa.Index));
                                 if (idx < 0 || idx >= list.Count)
-                                    throw new Exception("Array index out of bounds");
+                                    throw new Exception($"Array index out of bounds, line {aa.Line}, column {aa.Column}.");
 
                                 oldVal = Convert.ToDouble(list[idx]);
                                 newVal = u.Op == TokenType.PlusPlus ? oldVal + 1 : oldVal - 1;
@@ -630,7 +631,7 @@ public class Interpreter
                             {
                                 var obj = Eval(ma.ObjectNode);
                                 if (obj is not StructInstance si)
-                                    throw new Exception("Trying to increment/decrement a non-struct field");
+                                    throw new Exception($"Trying to increment/decrement a non-struct field, line {ma.Line}, column {ma.Column}.");
 
                                 if (!si.Fields.ContainsKey(ma.MemberName))
                                     throw new Exception($"Struct {si.Name} has no field {ma.MemberName}");
@@ -643,7 +644,7 @@ public class Interpreter
                             }
 
                         default:
-                            throw new Exception("Increment/decrement can only be applied to variables, array elements, or struct fields");
+                            throw new Exception($"Increment/decrement can only be applied to variables, array elements, or struct fields, line {u.Line}, column {u.Column}.");
                     }
                 }
 
@@ -657,5 +658,5 @@ public class Interpreter
             default:
                 throw new Exception($"Unknown node type {node.GetType().Name} at line {node.Line}, column {node.Column}");
         }
-    }
+    } 
 }
