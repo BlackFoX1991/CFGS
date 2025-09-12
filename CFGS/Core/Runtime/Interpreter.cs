@@ -547,7 +547,7 @@ public class Interpreter
                 return CallFunction(fdef, args);
 
             case BinOpNode b:
-                var left = Eval(b.Left);
+                var left = Eval(b.Left) ?? 0;
 
                 if (b.Op == TokenType.And)
                 {
@@ -565,7 +565,7 @@ public class Interpreter
                     return Convert.ToBoolean(r);
                 }
 
-                var right = Eval(b.Right);
+                var right = Eval(b.Right) ?? 0;
 
                 if (b.Op == TokenType.Plus)
                 {
