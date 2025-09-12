@@ -21,5 +21,5 @@
 
 ## Notes
 
-> ⚠️ ConfigScript is currently private and under active development. It will remain private until it is stable enough for public use.
+> ⚠️ ConfigScript is under active development, and many features are still in progress.
 
