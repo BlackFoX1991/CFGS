@@ -11,9 +11,10 @@ public static class Program
     {
         var interpreter = new Interpreter();
         var mainScript = string.Empty;
-        ShowInfo();
+        
         if (args.Length == 0)
         {
+            ShowInfo();
             bool replb = true;
             while(replb)
             {

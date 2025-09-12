@@ -466,7 +466,7 @@ public class Interpreter
             }
 
             case FuncCallNode fc:
-                if (fc.Name == "len")
+                /*if (fc.Name == "len")
                 {
                     if (fc.Args.Count != 1) throw new Exception($"Invalid argument for '{fc.Name}()', line {fc.Line}, column {fc.Column}.");
                     var arg = Eval(fc.Args[0]);
@@ -538,7 +538,11 @@ public class Interpreter
                     FileStream? arg0 = Eval(fc.Args[0]) as FileStream;
                     arg0.Close();
                     return 0;
-                }
+                }*/
+
+
+                if (BuiltInFunctions.builtinfuncs.TryGetValue(fc.Name, out var bltin))
+                    return bltin(fc.Args.Select(a => Eval(a)).ToList());
 
                 if (!_functions.TryGetValue(fc.Name, out var fdef))
                     throw new Exception($"Function not defined: {fc.Name}, line {fc.Line}, column {fc.Column}.");
