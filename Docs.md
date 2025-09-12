@@ -1,5 +1,15 @@
 # CFGS Documentation
 
+## Index
+- [Datatypes](#datatypes)
+- [Operators](#operators)
+- [Variables](#variables)
+- [First “warm-up”](#first-warm-up)
+- [Functions](#functions)
+- [Arrays and Strings](#arrays-and-strings)
+- [Structs](#structs)
+- [REPL and Importing](#repl-and-importing)
+
 ## Datatypes
 
 CFGS is a dynamic language, so you don't have to declare types for
