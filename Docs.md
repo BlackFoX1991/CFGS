@@ -3,6 +3,7 @@
 ## Index
 - [Datatypes](#datatypes)
 - [Operators](#operators)
+- [Postfix](#Postfix-Operators)
 - [Variables](#variables)
 - [First “warm-up”](#first-warm-up)
 - [Functions](#functions)
@@ -38,6 +39,42 @@ are supported, as well as strings, arrays, and structs.
   Less-Than or Equal        Boolean    `<=`
   Bool-Or                   Boolean    `||`
   Bool-And                  Boolean    `&&`
+
+------------------------------------------------------------------------
+
+## Postfix Operators
+
+Postfix operators apply directly to a variable after its name. CFGS
+currently supports the following:
+
+  ------------------------------------------------------------------------
+  Operator          Description             Example         Result
+  ----------------- ----------------------- --------------- --------------
+  `++`              Increments the value of `x = 5; x++;`   `x == 6`
+                    a variable by 1                         
+
+  `--`              Decrements the value of `x = 5; x--;`   `x == 4`
+                    a variable by 1                         
+  ------------------------------------------------------------------------
+
+Postfix operators return the **original value** before applying the
+operation:
+
+``` cfgs
+x = 5;
+y = x++;
+print(x); # 6
+print(y); # 5 (y got the original value before increment)
+```
+
+The same rule applies for the decrement operator:
+
+``` cfgs
+x = 5;
+y = x--;
+print(x); # 4
+print(y); # 5 (y got the original value before decrement)
+```
 
 ------------------------------------------------------------------------
 
