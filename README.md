@@ -50,6 +50,11 @@ while (true) {
 
 ---
 
+## Documentation
+
+[Open the documentation](Docs.md)
+
+
 ## Notes
 
 > ⚠️ ConfigScript is currently private and under active development. It will remain private until it is stable enough for public use.
