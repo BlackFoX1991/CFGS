@@ -2,15 +2,15 @@
 
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
 ![Language](https://img.shields.io/badge/language-CFGS-blue)
-![License](https://img.shields.io/badge/license-Private-lightgrey)
 
 **ConfigScript (CFGS)** is a lightweight custom scripting language designed to make configuring programs simple and flexible.
 
 ## Roadmap
 
-- Add more advanced features  
-- Fix existing bugs  
-- Improve stability and performance  
+## In Progress / To-Do
+- 🐛 Bug fixing between the **Parser → Interpreter** pipeline
+- 🏗️ Adding support for **structs with methods**
+- 🎨 Code polishing (some sections are still in a prototype state)
 
 ---
 
