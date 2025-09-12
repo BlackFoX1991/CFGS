@@ -335,6 +335,40 @@ public class Interpreter
         }
     }
 
+    public void VisitGlobals(Node node)
+    {
+        switch (node)
+        {
+            case FuncDefNode f:
+                _functions[f.Name] = f;
+                break;
+            case StructDefNode s:
+                _structs[s.Name] = s;
+                break;
+            case AssignNode a:
+                Visit(a); // globale Variablen initialisieren
+                break;
+            case ImportNode imp:
+                Visit(imp); // Imports ausführen
+                break;
+            case BlockNode b:
+                foreach (var stmt in b.Statements)
+                    VisitGlobals(stmt);
+                break;
+                // alles andere ignorieren
+        }
+    }
+
+
+    public object? CallFunctionByName(string name, List<object?> args)
+    {
+        if (!_functions.TryGetValue(name, out var fdef))
+            throw new Exception($"Function not defined: {name}");
+
+        return CallFunction(fdef, args);
+    }
+
+
     private object? CallFunction(FuncDefNode f, List<object?> argVals)
     {
         PushScope();
