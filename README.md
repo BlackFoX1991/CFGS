@@ -6,42 +6,6 @@
 
 **ConfigScript (CFGS)** is a lightweight custom scripting language designed to make configuring programs simple and flexible.
 
----
-
-## Features
-
-- **Conditional statements:** `if`, `else if`, `else` (curly braces required for every statement)  
-- **Loops:** `while` loops with `break` and `continue` (curly braces required)  
-- **Functions** for reusable code  
-- **Structs** (basic support)  
-- **Importing other scripts** for modularity  
-- **try/catch/finally/throw** for exception handling
-- **match/case** for simple conditions
-- **Arrays** arr = [1,2,3,["Hello","World"], 3.14]; delete arr[1]; delete arr[3];
-- **Postfix** x = 5; x++; print(x); --x; ++x;
-
----
-
-## Example
-
-```cfgs
-# Example ConfigScript code
-func greet(name) {
-    if (name == "Alice") {
-        print("Hello Alice!");
-    } else {
-        print("Hello stranger!");
-    }
-}
-
-while (true) {
-    greet("Alice");
-    break;
-}
-```
-
----
-
 ## Roadmap
 
 - Add more advanced features  
@@ -49,6 +13,11 @@ while (true) {
 - Improve stability and performance  
 
 ---
+
+## Documentation/ Features
+
+[Open the documentation](Docs.md)
+
 
 ## Notes
 
