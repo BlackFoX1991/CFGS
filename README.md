@@ -17,6 +17,7 @@
 ## Documentation/ Features
 
 [Open the documentation](Docs.md)
+[Examples](/CFGS/Examples/)
 
 
 ## Notes
