@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using CFGS.Core.Runtime.AST;
+using System.Text;
 
 namespace CFGS.Core.Runtime;
 
@@ -73,6 +74,11 @@ public static class BuiltInFunctions
             CheckArgs("fclose", args.Count, 1);
             (args[0] as FileStream)?.Close();
             return 0;
+        },
+        ["fexist"] = args =>
+        {
+            CheckArgs("fexist", args.Count, 1);
+            return File.Exists((args[0] as StringNode)?.Value ?? "");
         },
         ["pretty"] = args =>
         {
