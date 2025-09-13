@@ -1,0 +1,19 @@
+﻿#------------------------------------------------
+# Function      : CreateHash
+# Parameters    : input : string, offset : integer
+# Returns       : Hash of input and offset
+#------------------------------------------------
+
+func CreateHash(input, offset)
+{
+    hash = 0;
+    if(input == "") { return 0; }
+    i = 0;
+    while(i < len(input))
+    {
+        hash = ((hash << offset) - hash) + toint32(input[i]);
+        hash = hash & hash;
+        i++;
+    }
+    return hash;
+}

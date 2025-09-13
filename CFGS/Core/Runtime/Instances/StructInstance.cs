@@ -1,7 +1,7 @@
-﻿namespace CFGS.Core.Runtime;
+﻿namespace CFGS.Core.Runtime.Instances;
 
 #pragma warning disable CS8602
-public class StructInstance(string name, Dictionary<string, object?> fields) 
+public class StructInstance(string name, Dictionary<string, object?> fields)
 {
     public string Name { get; } = name;
     public Dictionary<string, object?> Fields { get; } = fields;

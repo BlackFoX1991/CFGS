@@ -1,0 +1,25 @@
+﻿import "hash.cfgs";
+import "bloom.cfgs";
+
+print("Wellcome to the Bloom Filter example.\n Use 'exit' to close the Application\n Use ?<Word> to do a word lookup\n Use +<Word> to add a new word to the List\n");
+
+while(true)
+{
+    ln = getl();
+
+    if(ln[0] == '+')
+    {
+        
+        BloomAdd(ln[1:]);
+        print("Added " + ln[1:] + " to the Bloom Filter.");
+    }
+    else if(ln[0] == '?')
+    {
+        print("Check for " + ln[1:] + " is " + BloomCheck(ln[1:]));
+    }
+    else if(ln == "exit")
+    {
+        print("Application closed.");
+        break;
+    }
+}

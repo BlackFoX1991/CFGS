@@ -1,5 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36429.23 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CFGS", "CFGS\CFGS.csproj", "{95919EEC-90B3-4171-BFCD-FD314FD373FB}"
 EndProject
 Global
@@ -12,5 +15,11 @@ Global
 		{95919EEC-90B3-4171-BFCD-FD314FD373FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{95919EEC-90B3-4171-BFCD-FD314FD373FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95919EEC-90B3-4171-BFCD-FD314FD373FB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E9BC6741-AD71-4E2E-8906-0C33BEF3B549}
 	EndGlobalSection
 EndGlobal

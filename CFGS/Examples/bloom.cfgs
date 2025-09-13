@@ -1,0 +1,46 @@
+﻿# -----------------------
+# Bloom Filter Setup
+# -----------------------
+size = 50;
+bits = [];
+while(len(bits) < size)
+{
+    bits[] = 0;
+}
+
+hashOffsets = [5, 7, 11];
+
+
+# -----------------------
+# Add new element
+# -----------------------
+func BloomAdd(item)
+{
+    i = 0;
+    while(i < len(hashOffsets))
+    {
+        h = CreateHash(item, hashOffsets[i]);
+        index = h % size;
+        bits[index] = 1;
+        i = i + 1;
+    }
+}
+
+# -----------------------
+# Check for true/false Value
+# -----------------------
+func BloomCheck(item)
+{
+    i = 0;
+    while(i < len(hashOffsets))
+    {
+        h = CreateHash(item, hashOffsets[i]);
+        index = h % size;
+        if(bits[index] == 0)
+        {
+            return false;
+        }
+        i = i + 1;
+    }
+    return true;
+}

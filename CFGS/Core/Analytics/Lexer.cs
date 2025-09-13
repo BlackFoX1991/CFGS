@@ -29,11 +29,15 @@ public class Lexer(string text)
         {"enum",TokenType.Enum}
     };
 
-    private void Advance() {
-        if (Current == '\n') {
+    private void Advance()
+    {
+        if (Current == '\n')
+        {
             _line++;
             _column = 1;
-        } else {
+        }
+        else
+        {
             _column++;
         }
         _pos++;
@@ -109,9 +113,9 @@ public class Lexer(string text)
             else if (char.IsLetter(Current))
             {
                 var id = Identifier();
-                tokens.Add(new Token(_keywords.GetValueOrDefault(id, TokenType.Identifier), id,_line,_column));
+                tokens.Add(new Token(_keywords.GetValueOrDefault(id, TokenType.Identifier), id, _line, _column));
             }
-            else if (Current == '"') tokens.Add(new Token(TokenType.String, StringLiteral(),_line,_column));
+            else if (Current == '"') tokens.Add(new Token(TokenType.String, StringLiteral(), _line, _column));
             else if (Current == '\'') tokens.Add(new Token(TokenType.Char, StringLiteral('\''), _line, _column));
             else
             {
@@ -120,7 +124,7 @@ public class Lexer(string text)
                     case '#': // skip comment
                         while (Current != '\0' && Current != '\n')
                             Advance();
-                        if(Current == '\n')Advance();
+                        if (Current == '\n') Advance();
                         break;
                     case '+':
                         Advance();
@@ -141,9 +145,9 @@ public class Lexer(string text)
                         else tokens.Add(new Token(TokenType.Minus, "", _line, _column));
                         break;
                     case '^':
-                        tokens.Add(new Token(TokenType.BitXor,"",_line,_column));
+                        tokens.Add(new Token(TokenType.BitXor, "", _line, _column));
                         Advance();
-                        break;  
+                        break;
                     case '*':
                         Advance();
                         if (Current == '*')
@@ -155,12 +159,12 @@ public class Lexer(string text)
 
                         break;
                     case '/':
-                        tokens.Add(new Token(TokenType.Div,"",_line,_column));
+                        tokens.Add(new Token(TokenType.Div, "", _line, _column));
                         Advance();
                         break;
-                    
+
                     case '%':
-                        tokens.Add(new Token(TokenType.Mod,"",_line,_column));
+                        tokens.Add(new Token(TokenType.Mod, "", _line, _column));
                         Advance();
                         break;
                     case '=':
@@ -168,9 +172,9 @@ public class Lexer(string text)
                         if (Current == '=')
                         {
                             Advance();
-                            tokens.Add(new Token(TokenType.Equals,"",_line,_column));
+                            tokens.Add(new Token(TokenType.Equals, "", _line, _column));
                         }
-                        else tokens.Add(new Token(TokenType.Assign,"",_line,_column));
+                        else tokens.Add(new Token(TokenType.Assign, "", _line, _column));
 
                         break;
                     case '!':
@@ -178,9 +182,9 @@ public class Lexer(string text)
                         if (Current == '=')
                         {
                             Advance();
-                            tokens.Add(new Token(TokenType.NotEquals,"",_line,_column));
+                            tokens.Add(new Token(TokenType.NotEquals, "", _line, _column));
                         }
-                        else 
+                        else
                             tokens.Add(new Token(TokenType.Not, "", _line, _column));
                         break;
                     case '<':
@@ -188,14 +192,14 @@ public class Lexer(string text)
                         if (Current == '=')
                         {
                             Advance();
-                            tokens.Add(new Token(TokenType.LessEq,"",_line,_column));
+                            tokens.Add(new Token(TokenType.LessEq, "", _line, _column));
                         }
                         else if (Current == '<')
                         {
                             Advance();
                             tokens.Add(new Token(TokenType.ShiftLeft, "", _line, _column));
                         }
-                        else tokens.Add(new Token(TokenType.Less,"",_line,_column));
+                        else tokens.Add(new Token(TokenType.Less, "", _line, _column));
 
                         break;
                     case '>':
@@ -203,7 +207,7 @@ public class Lexer(string text)
                         if (Current == '=')
                         {
                             Advance();
-                            tokens.Add(new Token(TokenType.GreaterEq,"",_line,_column));
+                            tokens.Add(new Token(TokenType.GreaterEq, "", _line, _column));
 
                         }
                         else if (Current == '>')
@@ -211,7 +215,7 @@ public class Lexer(string text)
                             Advance();
                             tokens.Add(new Token(TokenType.ShiftRight, "", _line, _column));
                         }
-                        else tokens.Add(new Token(TokenType.Greater,"",_line,_column));
+                        else tokens.Add(new Token(TokenType.Greater, "", _line, _column));
 
                         break;
                     case '&':
@@ -219,10 +223,9 @@ public class Lexer(string text)
                         if (Current == '&')
                         {
                             Advance();
-                            tokens.Add(new Token(TokenType.And,"",_line,_column));
+                            tokens.Add(new Token(TokenType.And, "", _line, _column));
                         }
                         else tokens.Add(new Token(TokenType.BitAnd, "", _line, _column));
-
 
                         break;
                     case '|':
@@ -230,33 +233,33 @@ public class Lexer(string text)
                         if (Current == '|')
                         {
                             Advance();
-                            tokens.Add(new Token(TokenType.Or,"",_line,_column));
+                            tokens.Add(new Token(TokenType.Or, "", _line, _column));
                         }
                         else tokens.Add(new Token(TokenType.BitOr, "", _line, _column));
                         break;
 
                     case '(':
-                        tokens.Add(new Token(TokenType.LParen,"",_line,_column));
+                        tokens.Add(new Token(TokenType.LParen, "", _line, _column));
                         Advance();
                         break;
                     case ')':
-                        tokens.Add(new Token(TokenType.RParen,"",_line,_column));
+                        tokens.Add(new Token(TokenType.RParen, "", _line, _column));
                         Advance();
                         break;
                     case '{':
-                        tokens.Add(new Token(TokenType.LBrace,"",_line,_column));
+                        tokens.Add(new Token(TokenType.LBrace, "", _line, _column));
                         Advance();
                         break;
                     case '}':
-                        tokens.Add(new Token(TokenType.RBrace,"",_line,_column));
+                        tokens.Add(new Token(TokenType.RBrace, "", _line, _column));
                         Advance();
                         break;
                     case ';':
-                        tokens.Add(new Token(TokenType.Semicolon,"",_line,_column));
+                        tokens.Add(new Token(TokenType.Semicolon, "", _line, _column));
                         Advance();
                         break;
                     case ',':
-                        tokens.Add(new Token(TokenType.Comma,"",_line,_column));
+                        tokens.Add(new Token(TokenType.Comma, "", _line, _column));
                         Advance();
                         break;
                     case '.':
@@ -264,11 +267,11 @@ public class Lexer(string text)
                         Advance();
                         break;
                     case '[':
-                        tokens.Add(new Token(TokenType.LBracket,"",_line,_column));
+                        tokens.Add(new Token(TokenType.LBracket, "", _line, _column));
                         Advance();
                         break;
                     case ']':
-                        tokens.Add(new Token(TokenType.RBracket,"",_line,_column));
+                        tokens.Add(new Token(TokenType.RBracket, "", _line, _column));
                         Advance();
                         break;
                     case ':':

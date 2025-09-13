@@ -1,8 +1,6 @@
 ﻿using CFGS.Core.Analytics;
-using Microsoft.VisualBasic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
+using CFGS.Core.Runtime.AST;
+using CFGS.Core.Runtime.Instances;
 
 namespace CFGS.Core.Runtime;
 
@@ -15,7 +13,6 @@ public class Interpreter
     private readonly Dictionary<string, StructDefNode> _structs = new();
     private readonly HashSet<string> _importedFiles = new();
     private readonly Dictionary<string, EnumDef> enums = new();
-
 
     public Interpreter()
     {
@@ -71,12 +68,9 @@ public class Interpreter
         if (value is EnumDef ev)
             return ev.ToString();
 
-
         // Fallback: normale .ToString()
         return value.ToString() ?? "null";
     }
-
-
 
     public void Visit(Node node)
     {
@@ -90,10 +84,9 @@ public class Interpreter
                 {
                     var val = Eval(p.Value);
                     Console.WriteLine(FormatValue(val));
-                    
+
                     break;
                 }
-
 
             case AppendNode append:
                 {
@@ -129,44 +122,42 @@ public class Interpreter
                     break;
                 }
 
-
-
             case AssignNode a:
-            {
-                var val = Eval(a.Value);
-
-                if (a.Target is VarNode v)
                 {
-                    SetVariable(v.Name, val);
-                }
-                else if (a.Target is ArrayAccessNode aa)
-                {
-                    var arrayObj = Eval(aa.Array);
-                    if (arrayObj is not List<object?> list)
-                        throw new Exception($"Trying to index a non-array, line {a.Line}, column {a.Column}.");
+                    var val = Eval(a.Value);
 
-                    var idxObj = Eval(aa.Index);
-                    int idx = Convert.ToInt32(idxObj);
-
-                    if (idx < 0 || idx >= list.Count)
-                        throw new Exception($"Array index out of bounds, line {a.Line}, column {a.Column}.");
-
-                    list[idx] = val;
-                }
-                else if (a.Target is MemberAccessNode ma)
-                {
-                    var obj = Eval(ma.ObjectNode);
-                    if (obj is StructInstance si)
+                    if (a.Target is VarNode v)
                     {
-                        if (!si.Fields.ContainsKey(ma.MemberName))
-                            throw new Exception($"Struct {si.Name} has no field {ma.MemberName}, line {ma.Line}, column {ma.Column}.");
-                        si.Fields[ma.MemberName] = val;
+                        SetVariable(v.Name, val);
                     }
+                    else if (a.Target is ArrayAccessNode aa)
+                    {
+                        var arrayObj = Eval(aa.Array);
+                        if (arrayObj is not List<object?> list)
+                            throw new Exception($"Trying to index a non-array, line {a.Line}, column {a.Column}.");
+
+                        var idxObj = Eval(aa.Index);
+                        int idx = Convert.ToInt32(idxObj);
+
+                        if (idx < 0 || idx >= list.Count)
+                            throw new Exception($"Array index out of bounds, line {a.Line}, column {a.Column}.");
+
+                        list[idx] = val;
+                    }
+                    else if (a.Target is MemberAccessNode ma)
+                    {
+                        var obj = Eval(ma.ObjectNode);
+                        if (obj is StructInstance si)
+                        {
+                            if (!si.Fields.ContainsKey(ma.MemberName))
+                                throw new Exception($"Struct {si.Name} has no field {ma.MemberName}, line {ma.Line}, column {ma.Column}.");
+                            si.Fields[ma.MemberName] = val;
+                        }
                         else
-                     {
-                        throw new Exception($"Invalid assignment target (not a struct instance), line {ma.Line}, column {ma.Column}.");
-                     }
-                }
+                        {
+                            throw new Exception($"Invalid assignment target (not a struct instance), line {ma.Line}, column {ma.Column}.");
+                        }
+                    }
                     else if (a.Target is SliceNode s)
                     {
                         var targetObj = Eval(s.Target);
@@ -216,14 +207,13 @@ public class Interpreter
                         }
                     }
 
-
                     else
                     {
-                    throw new Exception($"Invalid assignment target, line {a.Line}   , column    {a.Column}.");
-                }
+                        throw new Exception($"Invalid assignment target, line {a.Line}   , column    {a.Column}.");
+                    }
 
-                break;
-            }
+                    break;
+                }
             case TryNode t:
                 try
                 {
@@ -287,7 +277,7 @@ public class Interpreter
                 break;
 
             case WhileNode w:
-                while (Convert.ToBoolean(Eval(w.Condition))) 
+                while (Convert.ToBoolean(Eval(w.Condition)))
                 {
                     try
                     {
@@ -322,6 +312,8 @@ public class Interpreter
                 break;
 
             case FuncDefNode f:
+                if (_functions.ContainsKey(f.Name))
+                    throw new Exception($"Function '{f.Name}' declared more than once. Line {f.Line}, column {f.Column}.");
                 _functions[f.Name] = f;
                 break;
 
@@ -348,8 +340,6 @@ public class Interpreter
                     SetVariable(e.Name, enumDef);
                     break;
                 }
-
-
 
             default:
                 Eval(node);
@@ -394,7 +384,6 @@ public class Interpreter
         }
     }
 
-
     public object? CallFunctionByName(string name, List<object?> args)
     {
         if (!_functions.TryGetValue(name, out var fdef))
@@ -402,7 +391,6 @@ public class Interpreter
 
         return CallFunction(fdef, args);
     }
-
 
     private object? CallFunction(FuncDefNode f, List<object?> argVals)
     {
@@ -437,7 +425,7 @@ public class Interpreter
             case StringNode s: return s.Value;
             case CharNode c: return c.Value;
             case BoolNode b: return b.Value;
-            case VarNode v: return GetVariable(v.Name, v.Line,v.Column);
+            case VarNode v: return GetVariable(v.Name, v.Line, v.Column);
 
             case ArrayNode a:
                 var result = new List<object?>();
@@ -446,34 +434,34 @@ public class Interpreter
                 return result;
 
             case ArrayAccessNode ac:
-            {
-                var arrayObj = Eval(ac.Array);
-                switch (arrayObj)
                 {
-                    case List<object?> list:
+                    var arrayObj = Eval(ac.Array);
+                    switch (arrayObj)
                     {
-                        var idxObj = Eval(ac.Index);
-                        int idx = Convert.ToInt32(idxObj);
+                        case List<object?> list:
+                            {
+                                var idxObj = Eval(ac.Index);
+                                int idx = Convert.ToInt32(idxObj);
 
-                        if (idx < 0 || idx >= list.Count)
-                            throw new Exception($"Array index out of bounds, line {ac.Line}, column {ac.Column}.");
+                                if (idx < 0 || idx >= list.Count)
+                                    throw new Exception($"Array index out of bounds, line {ac.Line}, column {ac.Column}.");
 
-                        return list[idx];
+                                return list[idx];
+                            }
+                        case string stx:
+                            {
+                                var idxStr = Eval(ac.Index);
+                                int idx = Convert.ToInt32(idxStr);
+
+                                if (idx < 0 || idx >= stx.Length)
+                                    throw new Exception($"String index out of bounds, line {ac.Line}, column {ac.Column}.");
+
+                                return Convert.ToChar(stx[idx]);
+                            }
+                        default:
+                            throw new Exception($"Trying to index a non-array, line {ac.Line}, column {ac.Column}.");
                     }
-                    case string stx:
-                    {
-                        var idxStr = Eval(ac.Index);
-                        int idx = Convert.ToInt32(idxStr);
-
-                        if (idx < 0 || idx >= stx.Length)
-                            throw new Exception($"String index out of bounds, line {ac.Line}, column {ac.Column}.");
-
-                        return Convert.ToChar(stx[idx]);
-                    }
-                    default:
-                        throw new Exception($"Trying to index a non-array, line {ac.Line}, column {ac.Column}.");
                 }
-            }
             case EnumAccessNode ea:
                 if (!enums.TryGetValue(ea.EnumName, out var enumDef))
                     throw new Exception($"Enum {ea.EnumName} not defined, line {ea.Line}, column {ea.Column}.");
@@ -483,7 +471,6 @@ public class Interpreter
 
                 // Enum-Wert → z. B. Index zurückgeben
                 return enumDef.Members[ea.MemberName];
-
 
             case StructInstanceNode si:
                 if (!_structs.TryGetValue(si.StructName, out var sdef))
@@ -499,14 +486,14 @@ public class Interpreter
                 return new StructInstance(si.StructName, instance);
 
             case MemberAccessNode ma:
-            {
-                var obj = Eval(ma.ObjectNode);
-                if (obj is StructInstance sInst)
                 {
-                    if (!sInst.Fields.TryGetValue(ma.MemberName, out var eval))
-                        throw new Exception($"Struct {sInst.Name} has no field '{ma.MemberName}', line {ma.Line}, column {ma.Column}.");
-                    return eval;
-                }
+                    var obj = Eval(ma.ObjectNode);
+                    if (obj is StructInstance sInst)
+                    {
+                        if (!sInst.Fields.TryGetValue(ma.MemberName, out var eval))
+                            throw new Exception($"Struct {sInst.Name} has no field '{ma.MemberName}', line {ma.Line}, column {ma.Column}.");
+                        return eval;
+                    }
 
                     if (obj is EnumInstance eInst)
                     {
@@ -516,7 +503,7 @@ public class Interpreter
                     }
 
                     throw new Exception($"Member access on non-struct instance at line {ma.Line}, column {ma.Column}.");
-            }
+                }
 
             case FuncCallNode fc:
                 /*if (fc.Name == "len")
@@ -592,7 +579,6 @@ public class Interpreter
                     arg0.Close();
                     return 0;
                 }*/
-
 
                 if (BuiltInFunctions.builtinfuncs.TryGetValue(fc.Name, out var bltin))
                     return bltin(fc.Args.Select(a => Eval(a)).ToList());
@@ -679,8 +665,6 @@ public class Interpreter
                     }
                 }
 
-
-
             case UnaryOpNode u:
                 if (u.Op == TokenType.Minus)
                     return -Convert.ToDouble(Eval(u.Node));
@@ -739,15 +723,10 @@ public class Interpreter
                     }
                 }
 
-
                 throw new Exception($"Unknown unary operator {u.Op} at line {u.Line}, column {u.Column}");
-
-
-
-
 
             default:
                 throw new Exception($"Unknown node type {node.GetType().Name} at line {node.Line}, column {node.Column}");
         }
-    } 
+    }
 }

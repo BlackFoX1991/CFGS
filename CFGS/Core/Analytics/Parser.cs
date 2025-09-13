@@ -1,5 +1,4 @@
-﻿using CFGS.Core.Runtime;
-using System;
+﻿using CFGS.Core.Runtime.AST;
 using System.Globalization;
 
 #pragma warning disable CS8602
@@ -56,7 +55,6 @@ public class Parser(List<Token> tokens)
             Eat(TokenType.Semicolon);
             return new ArrayDeleteNode(arrNode, index, Current.Column, Current.Line);
         }
-
 
         else if (Current.Type == TokenType.Import)
         {
@@ -148,8 +146,6 @@ public class Parser(List<Token> tokens)
 
             return enumNode;
         }
-
-
 
         else if (Current.Type == TokenType.Return)
         {
@@ -333,11 +329,9 @@ public class Parser(List<Token> tokens)
                 else
                     throw new Exception($"Expected identifier in struct body, got {Current.Type} at line {Current.Line}, column {Current.Column}.");
 
-
-
             }
             Eat(TokenType.RBrace);
-            return new StructDefNode(structName, fields,methods, Current.Column, Current.Line);
+            return new StructDefNode(structName, fields, methods, Current.Column, Current.Line);
         }
 
         // Generische Behandlung für Zuweisungen oder Ausdruck-Statements:
@@ -376,7 +370,6 @@ public class Parser(List<Token> tokens)
                 }
             }
 
-
             // Funktionsaufruf als Statement (Expr kann ein FuncCallNode sein)
             if (left is FuncCallNode fc)
             {
@@ -389,13 +382,11 @@ public class Parser(List<Token> tokens)
             return left;
         }
 
-
         // Falls nichts passt -> Fehler
         throw new Exception($"Unexpected token {Current.Type} at line {Current.Line}, column {Current.Column}.");
     }
 
     private Node Expr() => LogicOr();
-
 
     private Node XBitOr()
     {
@@ -435,7 +426,6 @@ public class Parser(List<Token> tokens)
 
         return node;
     }
-
 
     private Node LogicOr()
     {
@@ -556,7 +546,6 @@ public class Parser(List<Token> tokens)
         return Postfix();
     }
 
-
     private Node Postfix()
     {
         var node = Primary();
@@ -570,9 +559,6 @@ public class Parser(List<Token> tokens)
 
         return node;
     }
-
-
-
 
     private Node Primary()
     {
@@ -694,7 +680,6 @@ public class Parser(List<Token> tokens)
 
             return node;
         }
-
 
         if (Current.Type == TokenType.LParen)
         {

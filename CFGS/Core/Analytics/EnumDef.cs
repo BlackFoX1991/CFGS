@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CFGS.Core.Analytics;
 #pragma warning disable CS8602
@@ -40,6 +39,3 @@ public class EnumDef
         });
     }
 }
-
-
-
