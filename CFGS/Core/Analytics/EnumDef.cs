@@ -7,29 +7,39 @@ namespace CFGS.Core.Analytics;
 
 public class EnumDef
 {
-    public readonly string Name;
-    public readonly List<KeyValuePair<string, int?>> Members;
+    public string Name { get; }
+    public Dictionary<string, int> Members { get; } = new();
 
     public EnumDef(string name, List<KeyValuePair<string, int?>> members)
     {
         Name = name;
-        Members = members;
+        int counter = 0;
+        var usedValues = new HashSet<int>();
+
+        foreach (var kv in members)
+        {
+            int value = kv.Value ?? counter;
+
+            if (usedValues.Contains(value))
+                throw new Exception($"Duplicate enum value {value} in enum {name}.");
+
+            Members[kv.Key] = value;
+            usedValues.Add(value);
+
+            counter = value + 1;
+        }
     }
 
     public override string ToString()
     {
-        var membersJson = Members
-            .Select(m => $"\"{m.Key}\": {m.Value?.ToString() ?? "null"}")
-            .Aggregate((current, next) => current + ", " + next);
-
-        return "{ " +
-               $"\"type\": \"Enum\", " +
-               $"\"name\": \"{Name}\", " +
-               $"\"members\": {{ {membersJson} }}" +
-               " }";
+        return JsonSerializer.Serialize(new
+        {
+            type = "Enum",
+            name = Name,
+            members = Members
+        });
     }
 }
-
 
 
 
