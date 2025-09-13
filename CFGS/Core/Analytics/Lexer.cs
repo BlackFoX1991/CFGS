@@ -25,7 +25,8 @@ public class Lexer(string text)
         {"match", TokenType.Match },
         {"case", TokenType.Case },
         {"default", TokenType.Default },
-        {"delete",TokenType.Delete}
+        {"delete",TokenType.Delete},
+        {"enum",TokenType.Enum}
     };
 
     private void Advance() {

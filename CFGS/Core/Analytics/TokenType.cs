@@ -62,5 +62,6 @@ public enum TokenType
     PlusPlus,
     MinusMinus,
     Colon,
-    Delete
+    Delete,
+    Enum
 }

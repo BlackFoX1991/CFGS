@@ -8,8 +8,10 @@ public class StructInstance(string name, Dictionary<string, object?> fields)
 
     public override string ToString()
     {
-        return "["+ Fields.Aggregate("", (current, item) => current + (item.Key + ",")) + "]";
+        var fieldsJson = string.Join(", ", Fields.Select(kv => $"\"{kv.Key}\": {kv.Value}"));
+        return $"{{\n  \"type\": \"StructInstance\",\n  \"Fields\": {{ {fieldsJson} }}\n}}";
     }
+
 }
 
 public class BreakSignal : Exception { }

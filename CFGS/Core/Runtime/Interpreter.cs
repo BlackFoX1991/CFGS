@@ -1,5 +1,6 @@
 ﻿using CFGS.Core.Analytics;
 using Microsoft.VisualBasic;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 
@@ -13,6 +14,7 @@ public class Interpreter
     private readonly Dictionary<string, FuncDefNode> _functions = new();
     private readonly Dictionary<string, StructDefNode> _structs = new();
     private readonly HashSet<string> _importedFiles = new();
+    private readonly Dictionary<string, EnumDef> enums = new();
 
 
     public Interpreter()
@@ -64,6 +66,11 @@ public class Interpreter
         // StructInstance mit Feldern
         if (value is StructInstance si)
             return "{" + string.Join(", ", si.Fields.Select(kv => $"{kv.Key}: {FormatValue(kv.Value)}")) + "}";
+
+        // EnumValue hübsch ausgeben
+        if (value is EnumDef ev)
+            return ev.ToString();
+
 
         // Fallback: normale .ToString()
         return value.ToString() ?? "null";
@@ -155,10 +162,10 @@ public class Interpreter
                             throw new Exception($"Struct {si.Name} has no field {ma.MemberName}, line {ma.Line}, column {ma.Column}.");
                         si.Fields[ma.MemberName] = val;
                     }
-                    else
-                    {
+                        else
+                     {
                         throw new Exception($"Invalid assignment target (not a struct instance), line {ma.Line}, column {ma.Column}.");
-                    }
+                     }
                 }
                     else if (a.Target is SliceNode s)
                     {
@@ -329,6 +336,21 @@ public class Interpreter
             case ReturnNode r:
                 throw new cException.ReturnException(Eval(r.Value));
 
+            case EnumDefNode e:
+                {
+                    // EnumDef aus EnumDefNode erstellen, automatische Werte werden zugewiesen
+                    var enumDef = new EnumDef(e.Name, e.Members);
+
+                    // Enum in Dictionary speichern
+                    enums[e.Name] = enumDef;
+
+                    // Enum als Variable verfügbar machen
+                    SetVariable(e.Name, enumDef);
+                    break;
+                }
+
+
+
             default:
                 Eval(node);
                 break;
@@ -339,6 +361,19 @@ public class Interpreter
     {
         switch (node)
         {
+            case EnumDefNode e:
+                {
+                    // EnumDef aus EnumDefNode erstellen, automatische Werte werden zugewiesen
+                    var enumDef = new EnumDef(e.Name, e.Members);
+
+                    // Enum in Dictionary speichern
+                    enums[e.Name] = enumDef;
+
+                    // Enum als Variable verfügbar machen
+                    SetVariable(e.Name, enumDef);
+                    break;
+                }
+
             case FuncDefNode f:
                 _functions[f.Name] = f;
                 break;
@@ -439,6 +474,16 @@ public class Interpreter
                         throw new Exception($"Trying to index a non-array, line {ac.Line}, column {ac.Column}.");
                 }
             }
+            case EnumAccessNode ea:
+                if (!enums.TryGetValue(ea.EnumName, out var enumDef))
+                    throw new Exception($"Enum {ea.EnumName} not defined, line {ea.Line}, column {ea.Column}.");
+
+                if (!enumDef.Members.ContainsKey(ea.MemberName))
+                    throw new Exception($"Enum {ea.EnumName} has no member {ea.MemberName}, line {ea.Line}, column {ea.Column}.");
+
+                // Enum-Wert → z. B. Index zurückgeben
+                return enumDef.Members[ea.MemberName];
+
 
             case StructInstanceNode si:
                 if (!_structs.TryGetValue(si.StructName, out var sdef))
@@ -462,7 +507,15 @@ public class Interpreter
                         throw new Exception($"Struct {sInst.Name} has no field '{ma.MemberName}', line {ma.Line}, column {ma.Column}.");
                     return eval;
                 }
-                throw new Exception($"Member access on non-struct instance at line {ma.Line}, column {ma.Column}.");
+
+                    if (obj is EnumInstance eInst)
+                    {
+                        if (!eInst.EnumDef.Members.ContainsKey(ma.MemberName))
+                            throw new Exception($"Enum {eInst.EnumDef.Name} has no member '{ma.MemberName}', line {ma.Line}, column {ma.Column}.");
+                        return new EnumInstance(eInst.EnumDef, ma.MemberName);
+                    }
+
+                    throw new Exception($"Member access on non-struct instance at line {ma.Line}, column {ma.Column}.");
             }
 
             case FuncCallNode fc:

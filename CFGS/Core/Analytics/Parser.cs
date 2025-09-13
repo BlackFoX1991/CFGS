@@ -1,14 +1,17 @@
-﻿using System.Globalization;
-using CFGS.Core.Runtime;
-
-namespace CFGS.Core.Analytics;
+﻿using CFGS.Core.Runtime;
+using System;
+using System.Globalization;
 
 #pragma warning disable CS8602
 #pragma warning disable CS8604
+namespace CFGS.Core.Analytics;
+
 public class Parser(List<Token> tokens)
 {
     private int _pos;
     private Token? Current => _pos < tokens.Count ? tokens[_pos] : null;
+
+    private readonly Dictionary<string, EnumDefNode> _enums = new();
 
     private void Eat(TokenType type)
     {
@@ -89,6 +92,65 @@ public class Parser(List<Token> tokens)
             Eat(TokenType.RBrace);
             return new FuncDefNode(name, parameters, body, Current.Column, Current.Line);
         }
+        else if (Current.Type == TokenType.Enum)
+        {
+            Eat(TokenType.Enum);
+            string enumName = Current.Value;
+            Eat(TokenType.Identifier);
+
+            Eat(TokenType.LBrace);
+            var members = new List<KeyValuePair<string, int?>>();
+            int? lastValue = null;
+
+            // mindestens ein Member
+            string memberName = Current.Value;
+            Eat(TokenType.Identifier);
+
+            int? memberValue = null;
+            if (Current.Type == TokenType.Assign) // optionaler Wert
+            {
+                Eat(TokenType.Assign);
+                memberValue = int.Parse(Current.Value);
+                Eat(TokenType.Number);
+            }
+
+            members.Add(new KeyValuePair<string, int?>(memberName, memberValue));
+            lastValue = memberValue ?? 0;
+
+            while (Current.Type == TokenType.Comma)
+            {
+                Eat(TokenType.Comma);
+                memberName = Current.Value;
+                Eat(TokenType.Identifier);
+
+                memberValue = null;
+                if (Current.Type == TokenType.Assign)
+                {
+                    Eat(TokenType.Assign);
+                    memberValue = int.Parse(Current.Value);
+                    Eat(TokenType.Number);
+                }
+                else if (lastValue.HasValue)
+                {
+                    memberValue = lastValue + 1; // automatische Hochzählung
+                }
+
+                members.Add(new KeyValuePair<string, int?>(memberName, memberValue));
+                lastValue = memberValue;
+            }
+
+            Eat(TokenType.RBrace);
+
+            var enumNode = new EnumDefNode(enumName, members, Current.Column, Current.Line);
+
+            // **Enum im Parser registrieren**
+            _enums[enumName] = enumNode;
+
+            return enumNode;
+        }
+
+
+
         else if (Current.Type == TokenType.Return)
         {
             Eat(TokenType.Return);
@@ -575,7 +637,7 @@ public class Parser(List<Token> tokens)
             if (Current.Type == TokenType.LParen)
                 node = FuncCall(name);
 
-            // Zugriff-Kette: Array-Zugriff oder Memberzugriff (beliebig verschachtelt)
+            // Zugriff-Kette: Array-Zugriff, Memberzugriff oder Enum-Zugriff
             while (Current.Type == TokenType.LBracket || Current.Type == TokenType.Dot)
             {
                 if (Current.Type == TokenType.LBracket)
@@ -594,24 +656,18 @@ public class Parser(List<Token> tokens)
                     {
                         // Prüfen auf Slice oder Index
                         if (Current.Type != TokenType.Colon)
-                        {
                             start = Expr();
-                        }
 
                         if (Current.Type == TokenType.Colon)
                         {
                             Eat(TokenType.Colon);
                             if (Current.Type != TokenType.RBracket)
-                            {
                                 end = Expr();
-                            }
 
-                            // Start und End sind optional
                             node = new SliceNode(node, start, end, Current.Column, Current.Line);
                         }
                         else
                         {
-                            // Normale Index-Zugriffe
                             node = new ArrayAccessNode(node, start ?? throw new Exception("Index expected"), Current.Column, Current.Line);
                         }
                     }
@@ -623,15 +679,22 @@ public class Parser(List<Token> tokens)
                     Eat(TokenType.Dot);
                     string member = Current.Value;
                     Eat(TokenType.Identifier);
-                    node = new MemberAccessNode(node, member, Current.Column, Current.Line);
+
+                    // **Enum-Check**: falls der linke Node ein VarNode ist und im _enums Dictionary existiert
+                    if (node is VarNode vn && _enums.ContainsKey(vn.Name))
+                    {
+                        node = new EnumAccessNode(vn.Name, member, Current.Column, Current.Line);
+                    }
+                    else
+                    {
+                        node = new MemberAccessNode(node, member, Current.Column, Current.Line);
+                    }
                 }
             }
 
-
-
-
             return node;
         }
+
 
         if (Current.Type == TokenType.LParen)
         {
@@ -684,4 +747,5 @@ public class Parser(List<Token> tokens)
         Eat(TokenType.RParen);
         return new FuncCallNode(name, args, Current.Column, Current.Line);
     }
+
 }
