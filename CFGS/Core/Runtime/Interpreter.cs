@@ -318,6 +318,8 @@ public class Interpreter
                 break;
 
             case StructDefNode s:
+                if (_structs.ContainsKey(s.Name))
+                    throw new Exception($"Struct '{s.Name}' declared more than once. Line {s.Line}, column {s.Column}.");
                 _structs[s.Name] = s;
                 break;
 
@@ -330,6 +332,9 @@ public class Interpreter
 
             case EnumDefNode e:
                 {
+                    if (enums.ContainsKey(e.Name))
+                        throw new Exception($"Enum '{e.Name}' declared more than once. Line {e.Line}, column {e.Column}.");
+
                     // EnumDef aus EnumDefNode erstellen, automatische Werte werden zugewiesen
                     var enumDef = new EnumDef(e.Name, e.Members);
 
@@ -353,6 +358,8 @@ public class Interpreter
         {
             case EnumDefNode e:
                 {
+                    if (enums.ContainsKey(e.Name))
+                        throw new Exception($"Enum '{e.Name}' declared more than once. Line {e.Line}, column {e.Column}.");
                     // EnumDef aus EnumDefNode erstellen, automatische Werte werden zugewiesen
                     var enumDef = new EnumDef(e.Name, e.Members);
 
@@ -365,9 +372,13 @@ public class Interpreter
                 }
 
             case FuncDefNode f:
+                if (_functions.ContainsKey(f.Name))
+                    throw new Exception($"Function '{f.Name}' declared more than once. Line {f.Line}, column {f.Column}.");
                 _functions[f.Name] = f;
                 break;
             case StructDefNode s:
+                if (_structs.ContainsKey(s.Name))
+                    throw new Exception($"Struct '{s.Name}' declared more than once. Line {s.Line}, column {s.Column}.");
                 _structs[s.Name] = s;
                 break;
             case AssignNode a:
