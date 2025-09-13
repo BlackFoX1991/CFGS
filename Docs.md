@@ -8,6 +8,7 @@
 - [First “warm-up”](#first-warm-up)
 - [Functions](#functions)
 - [Arrays and Strings](#arrays-and-strings)
+- [Enumerations](#Enumerations)
 - [Structs](#structs)
 - [REPL and Importing](#repl-and-importing)
 
@@ -192,6 +193,34 @@ arrtwo = myarr[:2];     # same as myarr[0:2]
 
 Both slice indices are optional: `[:end]` starts at 0, and `[start:]`
 goes to the last element.
+
+------------------------------------------------------------------------
+
+## Enumerations
+
+CFGS also supports **enumerations** (enums), which allow you to define a set of named constants.
+
+```cfgs
+enum Colors
+{
+    red,
+    green,
+    blue = 4
+}
+
+print(Colors.green);
+```
+
+In this example:
+
+- `red` is automatically assigned the value `0`.
+- `green` is automatically assigned the next value, which is `1`.
+- `blue` is explicitly assigned the value `4`.
+
+CFGS continues counting automatically from the last explicitly assigned value. For instance, if another element followed `blue`, it would be assigned `5`.
+
+Enumerations make your code more readable and help avoid using "magic numbers" for related constants.
+
 
 ------------------------------------------------------------------------
 
