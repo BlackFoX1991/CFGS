@@ -308,7 +308,7 @@ public class Interpreter
                 var tokens = lexer.GetTokens();
                 var parser = new Parser(tokens);
                 var tree = parser.Parse();
-                Visit(tree);
+                VisitGlobals(tree);
                 break;
 
             case FuncDefNode f:
@@ -374,7 +374,7 @@ public class Interpreter
                 Visit(a); // globale Variablen initialisieren
                 break;
             case ImportNode imp:
-                Visit(imp); // Imports ausführen
+                VisitGlobals(imp); // Imports ausführen
                 break;
             case BlockNode b:
                 foreach (var stmt in b.Statements)
@@ -488,6 +488,7 @@ public class Interpreter
             case MemberAccessNode ma:
                 {
                     var obj = Eval(ma.ObjectNode);
+
                     if (obj is StructInstance sInst)
                     {
                         if (!sInst.Fields.TryGetValue(ma.MemberName, out var eval))
@@ -495,90 +496,18 @@ public class Interpreter
                         return eval;
                     }
 
-                    if (obj is EnumInstance eInst)
+                    if (obj is EnumDef eDef)
                     {
-                        if (!eInst.EnumDef.Members.ContainsKey(ma.MemberName))
-                            throw new Exception($"Enum {eInst.EnumDef.Name} has no member '{ma.MemberName}', line {ma.Line}, column {ma.Column}.");
-                        return new EnumInstance(eInst.EnumDef, ma.MemberName);
+                        if (!eDef.Members.ContainsKey(ma.MemberName))
+                            throw new Exception($"Enum {eDef.Name} has no member '{ma.MemberName}', line {ma.Line}, column {ma.Column}.");
+                        return eDef.Members[ma.MemberName];
                     }
 
                     throw new Exception($"Member access on non-struct instance at line {ma.Line}, column {ma.Column}.");
                 }
 
+
             case FuncCallNode fc:
-                /*if (fc.Name == "len")
-                {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for '{fc.Name}()', line {fc.Line}, column {fc.Column}.");
-                    var arg = Eval(fc.Args[0]);
-                    return arg switch
-                    {
-                        List<object?> list => list.Count,
-                        string st => st.Length,
-                        _ => throw new Exception($"Invalid argument for {fc.Name}(), line {fc.Line}, column {fc.Column}.")
-                    };
-                }
-                else if(fc.Name == "toint32")
-                {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line {fc.Line}, column {fc.Column}.");
-                    var arg = Eval(fc.Args[0]);
-                    return Convert.ToInt32(arg);
-                }
-                else if (fc.Name == "toint64")
-                {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line  {fc.Line} , column  {fc.Column} .");
-                    var arg = Eval(fc.Args[0]);
-                    return Convert.ToInt64(arg);
-                }
-                else if (fc.Name == "todbl")
-                {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line  {fc.Line} , column  {fc.Column} .");
-                    var arg = Eval(fc.Args[0]);
-                    return Convert.ToDouble(arg);
-                }
-                else if(fc.Name == "getl")
-                {
-                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}(), line  {fc.Line} , column  {fc.Column} .");
-                    return Console.ReadLine();
-                }
-                else if (fc.Name == "getc")
-                {
-                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
-                    return Console.Read();
-                }
-                else if (fc.Name == "getk")
-                {
-                    if (fc.Args.Count > 0) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
-                    return Console.ReadKey();
-                }
-                else if(fc.Name == "fopen")
-                {
-                    if (fc.Args.Count != 2) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
-                    var arg = Eval(fc.Args[0]);
-                    dynamic? arg0 = Eval(fc.Args[1]);
-                   
-                    return new FileStream(arg.ToString(), (FileMode)arg0);
-                }
-                else if(fc.Name == "fwrite")
-                {
-                    if (fc.Args.Count != 2) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
-                    FileStream? arg0 = Eval(fc.Args[0]) as FileStream;
-                    dynamic? arg1 = (Eval(fc.Args[1]));
-                    arg0.Write(Encoding.UTF8.GetBytes((string)arg1));
-                    
-                    return 0;
-                }
-                else if(fc.Name == "pretty")
-                {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
-                    return FormatValue(Eval(fc.Args[0]));
-                }
-                else if (fc.Name == "fclose")
-                {
-                    if (fc.Args.Count != 1) throw new Exception($"Invalid argument for {fc.Name}(), line   {fc.Line}  , column   {fc.Column}  .");
-                    FileStream? arg0 = Eval(fc.Args[0]) as FileStream;
-                    arg0.Close();
-                    return 0;
-                }*/
 
                 if (BuiltInFunctions.builtinfuncs.TryGetValue(fc.Name, out var bltin))
                     return bltin(fc.Args.Select(a => Eval(a)).ToList());

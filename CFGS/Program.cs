@@ -9,7 +9,6 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        
         var interpreter = new Interpreter();
         var mainScript = string.Empty;
         

@@ -665,16 +665,8 @@ public class Parser(List<Token> tokens)
                     Eat(TokenType.Dot);
                     string member = Current.Value;
                     Eat(TokenType.Identifier);
-
-                    // **Enum-Check**: falls der linke Node ein VarNode ist und im _enums Dictionary existiert
-                    if (node is VarNode vn && _enums.ContainsKey(vn.Name))
-                    {
-                        node = new EnumAccessNode(vn.Name, member, Current.Column, Current.Line);
-                    }
-                    else
-                    {
-                        node = new MemberAccessNode(node, member, Current.Column, Current.Line);
-                    }
+                    node = new MemberAccessNode(node, member, Current.Column, Current.Line);
+                    
                 }
             }
 
