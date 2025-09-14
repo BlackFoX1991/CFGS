@@ -1,140 +1,236 @@
 ﻿using CFGS.Core.Analytics;
 using CFGS.Core.Runtime;
 
-#pragma warning disable CS8602
-
 namespace CFGS;
-
 
 public static class Program
 {
+    public static string _version = "1.4.3b";
     public static void Main(string[] args)
     {
         var interpreter = new Interpreter();
         var mainScript = string.Empty;
-        
+
         if (args.Length == 0)
         {
-            ShowInfo();
-            bool replb = true;
-            while(replb)
-            {
-                var replc = Console.ReadLine();
-                if(replc.Trim().StartsWith('$'))
-                {
-                    switch(replc.Substring(1).Trim())
-                    {
-                        case "help":
-                            Console.WriteLine("You can run CFGS also with these commandset. They can be combined too.\n");
-                            Console.WriteLine("-i <filepath>            : Loads a specific script");
-                            Console.WriteLine("-w <filepath>            : Sets the path to the Main-Script");
-                            Console.WriteLine("-r <code>                : Executes inline code");
-                            Console.WriteLine("-r -f <Functionname>     : Calls a specific function from loaded script(s)");
-                            Console.WriteLine("-r -m                    : Executes the Main-Script");
-                            break;
-                        case "exit":
-                            replb = false;
-                            break;
-
-                        case "clear":
-                            ShowInfo();
-                            break;
-
-                    }
-                }
-                else
-                {
-                    RunInlineCode(interpreter, replc);
-                    Console.Write("\n> ");
-                }
-            }
+            RunRepl(interpreter);
         }
         else
         {
-            for (int i = 0; i < args.Length; i++)
+            RunWithArguments(interpreter, args, ref mainScript);
+        }
+    }
+
+    // =====================
+    // REPL
+    // =====================
+    private static void RunRepl(Interpreter interpreter)
+    {
+        ShowBanner();
+
+        bool isRunning = true;
+        while (isRunning)
+        {
+            string codeBlock = ReadMultilineInput();
+            if (string.IsNullOrWhiteSpace(codeBlock))
+                continue;
+
+            if (codeBlock.StartsWith('$'))
             {
-                switch (args[i])
-                {
-                    case "-w":
-                        if (i + 1 >= args.Length) { Console.WriteLine("Missing path in -w"); return; }
-                        mainScript = args[++i];
-                        if (!File.Exists(mainScript))
-                        {
-                            Console.WriteLine($"Invalid script path '{mainScript}'.");
-                            mainScript = string.Empty;
-                        }
-                        else
-                        {
-                            if (mainScript.Contains("\\"))
-                                Directory.SetCurrentDirectory(mainScript.Substring(0, mainScript.LastIndexOf('\\')));
-                        }
+                isRunning = HandleReplCommand(interpreter, codeBlock);
+            }
+            else
+            {
+                RunInlineCode(interpreter, codeBlock);
+            }
+        }
+    }
 
-                        break;
-                    case "-i":
-                        if (i + 1 >= args.Length) { Console.WriteLine("Invalid filepath for -i <filepath>"); return; }
-                        string initFile = args[++i];
-                        LoadFileGlobals(interpreter, initFile);
-                        break;
+    private static string ReadMultilineInput()
+    {
+        var buffer = new List<string>();
+        string? line;
+        string prompt = "> ";
 
-                    case "-r":
-                        if (i + 1 >= args.Length) { Console.WriteLine("Invalid argument for -r"); return; }
+        do
+        {
+            Console.Write(prompt);
+            line = Console.ReadLine();
 
-                        if (args[i + 1] == "-f")
-                        {
-                            i++;
-                            if (i + 1 >= args.Length) { Console.WriteLine("Invalid functions call for -f"); return; }
-                            string funcCall = args[++i];
-                            ExecuteInlineFunction(interpreter, funcCall);
-                        }
-                        else if (args[i + 1] == "-m")
-                        {
-                            i++;
-                            if (!File.Exists(mainScript))
-                            {
-                                Console.WriteLine("Valid Main-Script has to be set with -w <filepath> first.");
-                            }
-                            else
-                                RunFileFunction(interpreter, mainScript);
-                        }
-                        else
-                        {
-                            string code = args[++i];
-                            RunInlineCode(interpreter, code);
-                        }
-                        break;
+            if (line == null)
+                break;
 
-                    default:
-                        Console.WriteLine($"Invalid argument: {args[i]}");
-                        return;
-                }
+            buffer.Add(line);
+
+            prompt = IsInputComplete(string.Join(Environment.NewLine, buffer)) ? "> " : "... ";
+
+        } while (prompt == "... ");
+
+        return string.Join(Environment.NewLine, buffer).Trim();
+    }
+
+    private static bool IsInputComplete(string input)
+    {
+        int paren = 0, brace = 0;
+        bool inString = false;
+
+        for (int i = 0; i < input.Length; i++)
+        {
+            char c = input[i];
+
+            if (c == '"' && (i == 0 || input[i - 1] != '\\'))
+            {
+                inString = !inString; // toggle string mode
+            }
+            else if (!inString)
+            {
+                if (c == '(') paren++;
+                if (c == ')') paren--;
+                if (c == '{') brace++;
+                if (c == '}') brace--;
             }
         }
 
-            
+        return !inString && paren <= 0 && brace <= 0;
     }
 
-    private static void ShowInfo()
+    private static bool HandleReplCommand(Interpreter interpreter, string command)
     {
-        Console.Clear();
-        Console.WriteLine("CFGS 1.4b - Configuration Language");
-        Console.WriteLine("Use $help, $exit or $clear");
-        Console.Write("> ");
+        switch (command[1..].Trim())
+        {
+            case "help":
+                Console.WriteLine("Available REPL commands:\n");
+                Console.WriteLine("-i <filepath>            : Loads a specific script");
+                Console.WriteLine("-w <filepath>            : Sets the path to the Main-Script");
+                Console.WriteLine("-r <code>                : Executes inline code");
+                Console.WriteLine("-r -f <Functionname>     : Calls a specific function from loaded script(s)");
+                Console.WriteLine("-r -m                    : Executes the Main-Script");
+                Console.WriteLine("\nSpecial REPL commands:");
+                Console.WriteLine("$help, $exit, $clear");
+                return true;
+
+            case "exit":
+                return false;
+
+            case "clear":
+                Console.Clear();
+                ShowBanner();
+                return true;
+
+            default:
+                Console.WriteLine($"[CFGS Error] Unknown command: {command}");
+                return true;
+        }
     }
 
+    private static void ShowBanner()
+    {
+        Console.WriteLine($"CFGS {_version} - Configuration Language");
+        Console.WriteLine("Type $help for commands, $exit to quit.\n");
+    }
+
+    // =====================
+    // ARGUMENT HANDLING
+    // =====================
+    private static void RunWithArguments(Interpreter interpreter, string[] args, ref string mainScript)
+    {
+        for (int i = 0; i < args.Length; i++)
+        {
+            switch (args[i])
+            {
+                case "-w":
+                    if (i + 1 >= args.Length)
+                    {
+                        Console.WriteLine("[CFGS Error] Missing path in -w");
+                        return;
+                    }
+
+                    mainScript = args[++i];
+                    if (!File.Exists(mainScript))
+                    {
+                        Console.WriteLine($"[CFGS Error] Invalid script path '{mainScript}'.");
+                        mainScript = string.Empty;
+                    }
+                    else
+                    {
+                        var dir = Path.GetDirectoryName(mainScript);
+                        if (!string.IsNullOrEmpty(dir))
+                            Directory.SetCurrentDirectory(dir);
+                    }
+                    break;
+
+                case "-i":
+                    if (i + 1 >= args.Length)
+                    {
+                        Console.WriteLine("[CFGS Error] Invalid filepath for -i <filepath>");
+                        return;
+                    }
+                    LoadFileGlobals(interpreter, args[++i]);
+                    break;
+
+                case "-r":
+                    if (i + 1 >= args.Length)
+                    {
+                        Console.WriteLine("[CFGS Error] Invalid argument for -r");
+                        return;
+                    }
+
+                    if (args[i + 1] == "-f")
+                    {
+                        i++;
+                        if (i + 1 >= args.Length)
+                        {
+                            Console.WriteLine("[CFGS Error] Invalid function call for -f");
+                            return;
+                        }
+                        ExecuteInlineFunction(interpreter, args[++i]);
+                    }
+                    else if (args[i + 1] == "-m")
+                    {
+                        i++;
+                        if (!File.Exists(mainScript))
+                        {
+                            Console.WriteLine("[CFGS Error] Valid Main-Script must be set with -w <filepath> first.");
+                        }
+                        else
+                        {
+                            RunFileFunction(interpreter, mainScript);
+                        }
+                    }
+                    else
+                    {
+                        RunInlineCode(interpreter, args[++i]);
+                    }
+                    break;
+
+                default:
+                    Console.WriteLine($"[CFGS Error] Invalid argument: {args[i]}");
+                    return;
+            }
+        }
+    }
+
+    // =====================
+    // HELPERS
+    // =====================
     private static void LoadFileGlobals(Interpreter interpreter, string file)
     {
-        if (!File.Exists(file)) { Console.WriteLine($"File does not exist : {file}"); return; }
+        if (!File.Exists(file))
+        {
+            Console.WriteLine($"[CFGS Error] File does not exist: {file}");
+            return;
+        }
 
         try
         {
             string code = File.ReadAllText(file);
             var tree = new Parser(new Lexer(code).GetTokens()).Parse();
             interpreter.VisitGlobals(tree);
-            Console.WriteLine($"Loaded script '{file}'.");
+            Console.WriteLine($"[CFGS] Loaded script '{file}'.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error while loading script '{file}' : {ex.Message}");
+            Console.WriteLine($"[CFGS Error] While loading '{file}': {ex.Message}");
         }
     }
 
@@ -147,15 +243,18 @@ public static class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine($"[CFGS Error] {ex.Message}");
         }
     }
-
 
     private static void ExecuteInlineFunction(Interpreter interpreter, string funcCall)
     {
         int paren = funcCall.IndexOf('(');
-        if (paren == -1 || !funcCall.EndsWith(")")) { Console.WriteLine("Invalid use of functions."); return; }
+        if (paren == -1 || !funcCall.EndsWith(")"))
+        {
+            Console.WriteLine("[CFGS Error] Invalid function call syntax.");
+            return;
+        }
 
         string name = funcCall[..paren].Trim();
         string argsStr = funcCall[(paren + 1)..^1];
@@ -175,28 +274,31 @@ public static class Program
         try
         {
             var result = interpreter.CallFunctionByName(name, argsList);
-            Console.WriteLine($"{name} : {result}");
+            Console.WriteLine($"{name} => {result}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in fcall '{name}' : {ex.Message}");
+            Console.WriteLine($"[CFGS Error] Function '{name}': {ex.Message}");
         }
     }
 
     private static void RunFileFunction(Interpreter interpreter, string file)
     {
-        if (!File.Exists(file)) { Console.WriteLine($"File does not exist : {file}"); return; }
+        if (!File.Exists(file))
+        {
+            Console.WriteLine($"[CFGS Error] File does not exist: {file}");
+            return;
+        }
 
         try
         {
             string code = File.ReadAllText(file);
             var tree = new Parser(new Lexer(code).GetTokens()).Parse();
-            interpreter.Visit(tree); // nur Funktionen laden
+            interpreter.Visit(tree); // Load and run main
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error while executing script '{file}' : {ex.Message}");
+            Console.WriteLine($"[CFGS Error] While executing '{file}': {ex.Message}");
         }
     }
-   
 }
