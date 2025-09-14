@@ -1,4 +1,6 @@
-﻿using CFGS.Core.Runtime.AST;
+﻿using CFGS.Core.Analytics;
+using CFGS.Core.Runtime.AST;
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace CFGS.Core.Runtime;
@@ -21,8 +23,15 @@ public static class BuiltInFunctions
             {
                 List<object?> list => list.Count,
                 string s => s.Length,
+                FileStream f => f.Length,
                 _ => throw new Exception("Invalid argument for 'len'")
             };
+        },
+        ["fpos"] = args =>
+        {
+            CheckArgs("fpos", args.Count, 1);
+            var fs = args[0] as FileStream ?? throw new Exception("Invalid FileStream");
+            return fs.Position;
         },
         ["toint32"] = args =>
         {
@@ -33,6 +42,16 @@ public static class BuiltInFunctions
         {
             CheckArgs("toint64", args.Count, 1);
             return Convert.ToInt64(args[0]);
+        },
+        ["chr"] = args =>
+        {
+            CheckArgs("chr", args.Count, 1);
+            return Convert.ToChar(args[0]);
+        },
+        ["str"] = args =>
+        {
+            CheckArgs("chr", args.Count, 1);
+            return ValueFormat.FormatValue(args[0]);
         },
         ["todbl"] = args =>
         {
@@ -56,10 +75,11 @@ public static class BuiltInFunctions
         },
         ["fopen"] = args =>
         {
-            CheckArgs("fopen", args.Count, 2);
+            CheckArgs("fopen", args.Count, 3);
             var path = args[0]?.ToString() ?? throw new Exception("Invalid path");
             var mode = (FileMode)args[1]!;
-            return new FileStream(path, mode);
+            var acc = (FileAccess)args[2]!;
+            return new FileStream(path, mode, acc);
         },
         ["fwrite"] = args =>
         {
@@ -68,6 +88,12 @@ public static class BuiltInFunctions
             var content = args[1]?.ToString() ?? "";
             fs.Write(Encoding.UTF8.GetBytes(content));
             return 0;
+        },
+        ["fread"] = args =>
+        {
+            CheckArgs("fread", args.Count, 1);
+            var fs = args[0] as FileStream ?? throw new Exception("Invalid FileStream");
+            return fs.ReadByte();
         },
         ["fclose"] = args =>
         {
@@ -79,11 +105,6 @@ public static class BuiltInFunctions
         {
             CheckArgs("fexist", args.Count, 1);
             return File.Exists((args[0] as StringNode)?.Value ?? "");
-        },
-        ["pretty"] = args =>
-        {
-            CheckArgs("pretty", args.Count, 1);
-            return args[0]?.ToString();
         }
     };
 

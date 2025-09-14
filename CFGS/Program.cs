@@ -44,7 +44,7 @@ public static class Program
                 else
                 {
                     RunInlineCode(interpreter, replc);
-                    Console.Write("> ");
+                    Console.Write("\n> ");
                 }
             }
         }

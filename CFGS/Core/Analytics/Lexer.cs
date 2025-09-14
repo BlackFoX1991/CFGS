@@ -10,10 +10,16 @@ public class Lexer(string text)
 
     private readonly Dictionary<string, TokenType> _keywords = new()
     {
-        { "if", TokenType.If },{"else",TokenType.Else}, { "while", TokenType.While }, { "print", TokenType.Print },
+        { "if", TokenType.If },
+        {"else",TokenType.Else}, 
+        { "while", TokenType.While }, 
+        { "print", TokenType.Print },
+        { "printc", TokenType.Printc },
         { "import", TokenType.Import },
-        { "func", TokenType.Func }, { "return", TokenType.Return },
-        { "true", TokenType.Boolean }, { "false", TokenType.Boolean },
+        { "func", TokenType.Func }, 
+        { "return", TokenType.Return },
+        { "true", TokenType.Boolean }, 
+        { "false", TokenType.Boolean },
         { "struct", TokenType.Struct },
         { "new", TokenType.New },
         {"break", TokenType.Break },
@@ -84,6 +90,8 @@ public class Lexer(string text)
                 result += Current switch
                 {
                     'n' => '\n',
+                    'r' => '\r',
+                    '0' => '\0',
                     't' => '\t',
                     '"' => '"',
                     '\'' => '\'',

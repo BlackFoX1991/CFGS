@@ -63,5 +63,6 @@ public enum TokenType
     MinusMinus,
     Colon,
     Delete,
-    Enum
+    Enum,
+    Printc
 }

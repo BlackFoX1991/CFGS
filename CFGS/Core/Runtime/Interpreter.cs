@@ -1,6 +1,7 @@
 ﻿using CFGS.Core.Analytics;
 using CFGS.Core.Runtime.AST;
 using CFGS.Core.Runtime.Instances;
+using System.Xml.Linq;
 
 namespace CFGS.Core.Runtime;
 
@@ -44,33 +45,7 @@ public class Interpreter
         // not found: define in current scope
         _scopes[^1][name] = value;
     }
-    private string FormatValue(object? value)
-    {
-        if (value is null) return "null";
 
-        // Strings mit Anführungszeichen
-        if (value is StringNode s)
-            return $"\"{s.Value}\"";
-
-        // Arrays / Listen
-        if (value is List<object?> list)
-            return "[" + string.Join(", ", list.Select(FormatValue)) + "]";
-
-        // Dictionaries (z. B. Struct als Dictionary gespeichert)
-        if (value is Dictionary<string, object?> dict)
-            return "{" + string.Join(", ", dict.Select(kv => $"{kv.Key}: {FormatValue(kv.Value)}")) + "}";
-
-        // StructInstance mit Feldern
-        if (value is StructInstance si)
-            return "{" + string.Join(", ", si.Fields.Select(kv => $"{kv.Key}: {FormatValue(kv.Value)}")) + "}";
-
-        // EnumValue hübsch ausgeben
-        if (value is EnumDef ev)
-            return ev.ToString();
-
-        // Fallback: normale .ToString()
-        return value.ToString() ?? "null";
-    }
 
     public void Visit(Node node)
     {
@@ -83,7 +58,14 @@ public class Interpreter
             case PrintNode p:
                 {
                     var val = Eval(p.Value);
-                    Console.WriteLine(FormatValue(val));
+                    Console.WriteLine(ValueFormat.FormatValue(val));
+
+                    break;
+                }
+            case PrintCharNode p:
+                {
+                    var val = Eval(p.Value);
+                    Console.Write(ValueFormat.FormatValue(val));
 
                     break;
                 }
@@ -517,11 +499,11 @@ public class Interpreter
                     throw new Exception($"Member access on non-struct instance at line {ma.Line}, column {ma.Column}.");
                 }
 
-
             case FuncCallNode fc:
 
                 if (BuiltInFunctions.builtinfuncs.TryGetValue(fc.Name, out var bltin))
                     return bltin(fc.Args.Select(a => Eval(a)).ToList());
+                
 
                 if (!_functions.TryGetValue(fc.Name, out var fdef))
                     throw new Exception($"Function not defined: {fc.Name}, line {fc.Line}, column {fc.Column}.");

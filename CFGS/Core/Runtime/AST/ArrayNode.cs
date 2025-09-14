@@ -13,5 +13,14 @@ public class ArrayNode : Node
         Line = line;
     }
 
-    public override string ToString() => $"[{string.Join(", ", Elements.Select(e => e.ToString()))}]";
+    public override string ToString()
+    {
+        return "[" + string.Join(", ", Elements.Select(e =>
+        {
+            if (e is StringNode s)
+                return s.Value; // oder $"\"{s.Value}\"" falls mit Quotes
+            return e.ToString();
+        })) + "]";
+    }
+
 }

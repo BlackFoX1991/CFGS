@@ -39,6 +39,15 @@ public class Parser(List<Token> tokens)
             Eat(TokenType.Semicolon);
             return new PrintNode(val, Current.Column, Current.Line);
         }
+        else if (Current.Type == TokenType.Printc)
+        {
+            Eat(TokenType.Printc);
+            Eat(TokenType.LParen);
+            var val = Expr();
+            Eat(TokenType.RParen);
+            Eat(TokenType.Semicolon);
+            return new PrintCharNode(val, Current.Column, Current.Line);
+        }
         else if (Current.Type == TokenType.Delete)
         {
             Eat(TokenType.Delete);
