@@ -16,8 +16,9 @@
 
 ## Documentation/ Features
 
-[Open the documentation](Docs.md)
-[Examples](/CFGS/Examples/)
+- [Open the documentation](Docs.md)
+- [Built-In-Functions](BuiltIn.md)
+- [Examples](/CFGS/Examples/)
 
 
 ## Notes
