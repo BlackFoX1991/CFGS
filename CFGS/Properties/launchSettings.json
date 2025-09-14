@@ -1,7 +1,8 @@
 {
   "profiles": {
     "CFGS": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-w C:\\Users\\loewe\\source\\repos\\CFGS\\CFGS\\Examples\\main.cfgs -r -m"
     }
   }
 }

@@ -287,7 +287,7 @@ public class Interpreter
                 var tokens = lexer.GetTokens();
                 var parser = new Parser(tokens);
                 var tree = parser.Parse();
-                VisitGlobals(tree);
+                Visit(tree);
                 break;
 
             case FuncDefNode f:
@@ -328,49 +328,6 @@ public class Interpreter
             default:
                 Eval(node);
                 break;
-        }
-    }
-
-    public void VisitGlobals(Node node)
-    {
-        switch (node)
-        {
-            case EnumDefNode e:
-                {
-                    if (enums.ContainsKey(e.Name))
-                        throw new Exception($"Enum '{e.Name}' declared more than once. Line {e.Line}, column {e.Column}.");
-                    // EnumDef aus EnumDefNode erstellen, automatische Werte werden zugewiesen
-                    var enumDef = new EnumDef(e.Name, e.Members);
-
-                    // Enum in Dictionary speichern
-                    enums[e.Name] = enumDef;
-
-                    // Enum als Variable verfügbar machen
-                    SetVariable(e.Name, enumDef);
-                    break;
-                }
-
-            case FuncDefNode f:
-                if (_functions.ContainsKey(f.Name) || BuiltInFunctions.builtinfuncs.ContainsKey(f.Name))
-                    throw new Exception($"Function '{f.Name}' declared more than once. Line {f.Line}, column {f.Column}.");
-                _functions[f.Name] = f;
-                break;
-            case StructDefNode s:
-                if (_structs.ContainsKey(s.Name))
-                    throw new Exception($"Struct '{s.Name}' declared more than once. Line {s.Line}, column {s.Column}.");
-                _structs[s.Name] = s;
-                break;
-            case AssignNode a:
-                Visit(a); // globale Variablen initialisieren
-                break;
-            case ImportNode imp:
-                VisitGlobals(imp); // Imports ausführen
-                break;
-            case BlockNode b:
-                foreach (var stmt in b.Statements)
-                    VisitGlobals(stmt);
-                break;
-                // alles andere ignorieren
         }
     }
 

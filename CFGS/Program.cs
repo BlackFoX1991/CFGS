@@ -225,7 +225,7 @@ public static class Program
         {
             string code = File.ReadAllText(file);
             var tree = new Parser(new Lexer(code).GetTokens()).Parse();
-            interpreter.VisitGlobals(tree);
+            interpreter.Visit(tree);
             Console.WriteLine($"[CFGS] Loaded script '{file}'.");
         }
         catch (Exception ex)
