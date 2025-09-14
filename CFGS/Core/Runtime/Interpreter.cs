@@ -1,7 +1,6 @@
 ﻿using CFGS.Core.Analytics;
 using CFGS.Core.Runtime.AST;
 using CFGS.Core.Runtime.Instances;
-using System.Xml.Linq;
 
 namespace CFGS.Core.Runtime;
 
@@ -45,7 +44,6 @@ public class Interpreter
         // not found: define in current scope
         _scopes[^1][name] = value;
     }
-
 
     public void Visit(Node node)
     {
@@ -503,7 +501,6 @@ public class Interpreter
 
                 if (BuiltInFunctions.builtinfuncs.TryGetValue(fc.Name, out var bltin))
                     return bltin(fc.Args.Select(a => Eval(a)).ToList());
-                
 
                 if (!_functions.TryGetValue(fc.Name, out var fdef))
                     throw new Exception($"Function not defined: {fc.Name}, line {fc.Line}, column {fc.Column}.");
@@ -534,8 +531,19 @@ public class Interpreter
 
                 if (b.Op == TokenType.Plus)
                 {
+                    // Wenn eines der beiden ein string ist, alles in string umwandeln
                     if (left is string || right is string)
-                        return left + right.ToString();
+                    {
+                        string lstr = left is List<object> llist ? ValueFormat.FormatValue(llist) : left?.ToString() ?? "";
+                        string rstr = right is List<object> rlist ? ValueFormat.FormatValue(rlist) : right?.ToString() ?? "";
+                        return lstr + rstr;
+                    }
+
+                    // Wenn eines ein Array/Struct ist → String
+                    if (left is List<object> llist2) return ValueFormat.FormatValue(llist2) + right?.ToString();
+                    if (right is List<object> rlist2) return left?.ToString() + ValueFormat.FormatValue(rlist2);
+
+                    // Standard: Zahl
                     return Convert.ToDouble(left) + Convert.ToDouble(right);
                 }
 
@@ -554,8 +562,8 @@ public class Interpreter
                     TokenType.BitAnd => (long)lft & (long)rght,
                     TokenType.BitXor => (long)lft ^ (long)rght,
                     TokenType.BitOr => (long)lft | (long)rght,
-                    TokenType.Equals => lft == rght,
-                    TokenType.NotEquals => lft != rght,
+                    TokenType.Equals => AreEqual(lft, rght),
+                    TokenType.NotEquals => !AreEqual(lft, rght),
                     TokenType.Less => lft < rght,
                     TokenType.LessEq => lft <= rght,
                     TokenType.Greater => lft > rght,
@@ -651,4 +659,22 @@ public class Interpreter
                 throw new Exception($"Unknown node type {node.GetType().Name} at line {node.Line}, column {node.Column}");
         }
     }
+
+    private bool AreEqual(object? a, object? b)
+    {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+
+        if (a is StructInstance sa && b is StructInstance sb)
+            return ReferenceEquals(sa, sb);
+
+        if (a is List<object?> la && b is List<object?> lb)
+            return ReferenceEquals(la, lb);
+
+        if (a is char ca && b is char cb)
+            return ca == cb;
+
+        return a.Equals(b);
+    }
+
 }

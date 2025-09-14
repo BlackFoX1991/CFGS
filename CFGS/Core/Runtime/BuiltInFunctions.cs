@@ -27,6 +27,12 @@ public static class BuiltInFunctions
                 _ => throw new Exception("Invalid argument for 'len'")
             };
         },
+        ["isarray"] = args =>
+        {
+            CheckArgs("len", args.Count, 1);
+            var arg = args[0];
+            return arg is List<object?>;
+        },
         ["fpos"] = args =>
         {
             CheckArgs("fpos", args.Count, 1);
