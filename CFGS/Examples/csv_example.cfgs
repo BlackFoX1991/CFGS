@@ -1,0 +1,108 @@
+﻿# Declare our structs to make things easier, without keep all that Numbers in mind
+enum FileMode
+{
+	CreateNew = 1,
+	Create,
+	Open,
+	OpenOrCreate,
+	Truncate,
+	Append
+	
+}
+enum FileAccess
+{
+	Read = 1,
+	Write,
+	ReadWrite
+}
+
+# Our function to get the CSV data
+
+func loadCSV(file)
+{
+    table_content = []; # Initialize the main array
+    
+    if(!fexist(file)) { return table_content; } # check if the file exist
+
+    fl = fopen(file, FileMode.OpenOrCreate, FileAccess.Read); # Open the File with expected modifiers
+
+    cur_line = []; # Initialize the line array
+    temp = ""; # declare temporary value holder
+    strmode = false; # declare string mode boolean
+
+    while(fpos(fl) < len(fl))
+    {
+        ctoken = str(chr(fread(fl)));
+        if(ctoken == "\0"){ break; }
+        if(ctoken == "\r") { continue; }
+
+        if(ctoken == "\"") # if theres a quote switching strmode
+        {
+            strmode = !strmode;
+            continue; # skip the quote
+        }
+
+        if(strmode)
+        {
+            temp = temp + ctoken; # parsing the string
+        }
+        else
+        {
+            if(ctoken == ",")
+            {
+                # adding the new value parsed before
+                cur_line[] = temp;
+                temp = ""; # reset
+            }
+            else if(ctoken == "\n")
+            {
+                
+                cur_line[] = temp;          # adding the previous parsed value before newline
+                temp = "";                  # reset
+                table_content[] = cur_line; # add the whole array to the end of the other array
+                cur_line = [];              # Initialize a new array
+            }
+            else
+            {
+                temp = temp + ctoken; # parsing the value
+            }
+        }
+    }
+
+    # letzte Zeile hinzufügen, falls noch Daten übrig
+    if(temp != "" || len(cur_line) > 0)
+    {
+        cur_line[] = temp;
+        table_content[] = cur_line;
+    }
+
+    fclose(fl);
+    return table_content;
+}
+
+tb = loadDep("test.txt");
+
+
+
+# just a little test iter trough arrays
+j = 0;
+out = "";
+while(j<len(tb))
+{
+    out = out + "[";
+    i = 0;
+    while(i<len(tb[j]))
+    {
+        out = out + tb[j][i] + ",";
+        i++;
+    }
+    out = out + "]\n";
+    j++;
+}
+
+print(tb); # Output our CSV
+
+# testing file functions further
+fx = fopen("output.txt",FileMode.OpenOrCreate, FileAccess.Write);
+fwrite(fx,str(tb));
+fclose(fx);
