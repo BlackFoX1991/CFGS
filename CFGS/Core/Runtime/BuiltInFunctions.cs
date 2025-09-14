@@ -1,12 +1,13 @@
 ﻿using CFGS.Core.Analytics;
-using CFGS.Core.Runtime.AST;
-using System.Runtime.Serialization;
 using System.Text;
 
 namespace CFGS.Core.Runtime;
 
 public static class BuiltInFunctions
 {
+
+    public static int CallCol = 0;
+    public static int CallLine = 0;
     public static void CheckArgs(string name, int currentCount, int expected)
     {
         if (currentCount != expected)
@@ -24,7 +25,7 @@ public static class BuiltInFunctions
                 List<object?> list => list.Count,
                 string s => s.Length,
                 FileStream f => f.Length,
-                _ => throw new Exception("Invalid argument for 'len'")
+                _ => throw new Exception($"Invalid argument for 'len' at line {CallLine}, column {CallCol}.")
             };
         },
         ["isarray"] = args =>
@@ -36,7 +37,7 @@ public static class BuiltInFunctions
         ["fpos"] = args =>
         {
             CheckArgs("fpos", args.Count, 1);
-            var fs = args[0] as FileStream ?? throw new Exception("Invalid FileStream");
+            var fs = args[0] as FileStream ?? throw new Exception($"Invalid FileStream at line {CallLine}, column {CallCol}.");
             return fs.Position;
         },
         ["toint32"] = args =>
@@ -82,7 +83,7 @@ public static class BuiltInFunctions
         ["fopen"] = args =>
         {
             CheckArgs("fopen", args.Count, 3);
-            var path = args[0]?.ToString() ?? throw new Exception("Invalid path");
+            var path = args[0]?.ToString() ?? throw new Exception($"Invalid path at line {CallLine}, column {CallCol}.");
             var mode = (FileMode)args[1]!;
             var acc = (FileAccess)args[2]!;
             return new FileStream(path, mode, acc);
@@ -90,7 +91,7 @@ public static class BuiltInFunctions
         ["fwrite"] = args =>
         {
             CheckArgs("fwrite", args.Count, 2);
-            var fs = args[0] as FileStream ?? throw new Exception("Invalid FileStream");
+            var fs = args[0] as FileStream ?? throw new Exception($"Invalid FileStream at line {CallLine}, column {CallCol}.");
             var content = args[1]?.ToString() ?? "";
             fs.Write(Encoding.UTF8.GetBytes(content));
             return 0;
@@ -98,7 +99,7 @@ public static class BuiltInFunctions
         ["fread"] = args =>
         {
             CheckArgs("fread", args.Count, 1);
-            var fs = args[0] as FileStream ?? throw new Exception("Invalid FileStream");
+            var fs = args[0] as FileStream ?? throw new Exception($"Invalid FileStream at line {CallLine}, column {CallCol}.");
             return fs.ReadByte();
         },
         ["fclose"] = args =>

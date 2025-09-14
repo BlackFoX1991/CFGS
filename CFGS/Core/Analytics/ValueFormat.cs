@@ -1,10 +1,5 @@
-﻿using CFGS.Core.Runtime.AST;
-using CFGS.Core.Runtime.Instances;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CFGS.Core.Runtime.Instances;
+
 
 namespace CFGS.Core.Analytics
 {

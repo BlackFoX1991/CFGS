@@ -5,6 +5,7 @@ using CFGS.Core.Runtime;
 
 namespace CFGS;
 
+
 public static class Program
 {
     public static void Main(string[] args)
@@ -149,6 +150,7 @@ public static class Program
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
+
 
     private static void ExecuteInlineFunction(Interpreter interpreter, string funcCall)
     {

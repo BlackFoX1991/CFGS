@@ -1,5 +1,4 @@
 ﻿using CFGS.Core.Analytics;
-using CFGS.Core.Runtime.AST;
 using CFGS.Core.Runtime.Instances;
 
 namespace CFGS.Core.Runtime;
@@ -292,7 +291,7 @@ public class Interpreter
                 break;
 
             case FuncDefNode f:
-                if (_functions.ContainsKey(f.Name))
+                if (_functions.ContainsKey(f.Name) || BuiltInFunctions.builtinfuncs.ContainsKey(f.Name))
                     throw new Exception($"Function '{f.Name}' declared more than once. Line {f.Line}, column {f.Column}.");
                 _functions[f.Name] = f;
                 break;
@@ -352,7 +351,7 @@ public class Interpreter
                 }
 
             case FuncDefNode f:
-                if (_functions.ContainsKey(f.Name))
+                if (_functions.ContainsKey(f.Name) || BuiltInFunctions.builtinfuncs.ContainsKey(f.Name))
                     throw new Exception($"Function '{f.Name}' declared more than once. Line {f.Line}, column {f.Column}.");
                 _functions[f.Name] = f;
                 break;
@@ -499,6 +498,8 @@ public class Interpreter
 
             case FuncCallNode fc:
 
+                BuiltInFunctions.CallLine = fc.Line;
+                BuiltInFunctions.CallCol = fc.Column;
                 if (BuiltInFunctions.builtinfuncs.TryGetValue(fc.Name, out var bltin))
                     return bltin(fc.Args.Select(a => Eval(a)).ToList());
 
@@ -678,3 +679,4 @@ public class Interpreter
     }
 
 }
+
