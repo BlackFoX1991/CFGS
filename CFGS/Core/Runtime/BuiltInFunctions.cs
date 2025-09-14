@@ -71,7 +71,7 @@ public static class BuiltInFunctions
         ["getk"] = args =>
         {
             CheckArgs("getk", args.Count, 0);
-            return Console.ReadKey();
+            return Console.ReadKey().Key.ToString();
         },
         ["fopen"] = args =>
         {

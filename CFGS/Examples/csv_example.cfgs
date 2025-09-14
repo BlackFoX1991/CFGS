@@ -1,4 +1,4 @@
-﻿# Declare our structs to make things easier, without keep all that Numbers in mind
+﻿# Declare our enum to make things easier, without keeping all that Numbers in mind
 enum FileMode
 {
 	CreateNew = 1,
