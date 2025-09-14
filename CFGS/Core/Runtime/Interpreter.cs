@@ -55,14 +55,14 @@ public class Interpreter
             case PrintNode p:
                 {
                     var val = Eval(p.Value);
-                    Console.WriteLine(ValueFormat.FormatValue(val));
+                    Console.WriteLine((val));
 
                     break;
                 }
             case PrintCharNode p:
                 {
                     var val = Eval(p.Value);
-                    Console.Write(ValueFormat.FormatValue(val));
+                    Console.Write((val));
 
                     break;
                 }
