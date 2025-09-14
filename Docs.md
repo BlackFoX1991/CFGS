@@ -262,12 +262,11 @@ statement:
 import "path/to/script.cfgs";
 ```
 
-Imported scripts are executed immediately when imported. (Scripts loaded
-with the `-i` command-line option are not executed automatically.)
+Imported scripts are executed immediately when imported, same if you use -i in REPL.
 
 ### Command-line options
 
-    -i <filepath>            : Loads a specific script (does not execute automatically)
+    -i <filepath>            : Loads a specific script (automatically execute)
     -w <filepath>            : Sets the path to the main script and the working directory
     -r <code>                : Executes inline code
     -r -f <Functionname>     : Calls a specific function from loaded script(s)
