@@ -1,16 +1,13 @@
 # ConfigScript (CFGS)
 
-![Status](https://img.shields.io/badge/status-in%20development-yellow)
 ![Language](https://img.shields.io/badge/language-CFGS-blue)
 
 **ConfigScript (CFGS)** is a lightweight custom scripting language designed to make configuring programs simple and flexible.
 
-## Roadmap
 
-## In Progress / To-Do
-- 🐛 Bug fixing between the **Parser → Interpreter** pipeline
-- 🏗️ Adding support for **structs with methods**
-- 🎨 Code polishing (some sections are still in a prototype state)
+⚠️ This version of CFGS is no longer under active development. The repository remains available for reference.  
+For the actively developed version running on a stack-based bytecode VM, see [ConfigurationScript-VM](https://github.com/BlackFoX1991/ConfigurationScript-VM).
+
 
 ---
 
@@ -21,7 +18,5 @@
 - [Examples](/CFGS/Examples/)
 
 
-## Notes
 
-> ⚠️ ConfigScript is under active development, and many features are still in progress.
 
